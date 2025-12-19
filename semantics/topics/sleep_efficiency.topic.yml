@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/topic.json
+name: sleep_efficiency
+description: "Sleep efficiency metrics covering time in bed vs. asleep, sleep debt, and sleep need"
+base_view: sleep_cycles
+views:
+  - sleep_cycles

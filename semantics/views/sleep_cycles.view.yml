@@ -1,0 +1,189 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/view.json
+name: sleep_cycles
+description: "Sleep cycle records with detailed sleep phase metrics, quality indicators, and timing data"
+datasource: local
+table: sleeps.csv
+
+entities:
+  - name: sleep_cycle
+    type: primary
+    description: "Individual sleep cycle recording"
+    key: cycle_start_time
+
+dimensions:
+  - name: cycle_start_time
+    type: datetime
+    description: "When the sleep cycle recording began"
+    expr: '"Cycle start time"'
+    synonyms: ["bedtime", "sleep start", "cycle start"]
+
+  - name: cycle_end_time
+    type: datetime
+    description: "When the sleep cycle recording ended"
+    expr: '"Cycle end time"'
+    synonyms: ["cycle end"]
+
+  - name: sleep_onset
+    type: datetime
+    description: "When the person actually fell asleep"
+    expr: '"Sleep onset"'
+    synonyms: ["fell asleep", "sleep time"]
+
+  - name: wake_onset
+    type: datetime
+    description: "When the person woke up"
+    expr: '"Wake onset"'
+    synonyms: ["wake time", "wake up time"]
+
+  - name: is_nap
+    type: boolean
+    description: "Whether this sleep period was a nap"
+    expr: '"Nap"'
+    samples: ["true", "false"]
+    synonyms: ["nap", "nap flag"]
+
+  - name: timezone
+    type: string
+    description: "Timezone offset from UTC"
+    expr: '"Cycle timezone"'
+    samples: ["UTC-08:00", "UTC-05:00"]
+
+  - name: sleep_date
+    type: date
+    description: "Date of the sleep cycle"
+    expr: 'DATE("Cycle start time")'
+    synonyms: ["date", "sleep date"]
+
+  - name: sleep_day_of_week
+    type: number
+    description: "Day of week (0=Sunday, 6=Saturday)"
+    expr: 'EXTRACT(DOW FROM "Cycle start time")'
+    synonyms: ["day of week", "weekday"]
+
+  - name: sleep_hour
+    type: number
+    description: "Hour when sleep cycle started (0-23)"
+    expr: 'EXTRACT(HOUR FROM "Cycle start time")'
+    synonyms: ["bedtime hour", "sleep hour"]
+
+measures:
+  - name: total_cycles
+    type: count
+    description: "Total number of sleep cycles"
+    synonyms: ["cycle count", "number of sleeps"]
+
+  - name: sleep_performance
+    type: average
+    description: "Overall sleep quality score (0-100)"
+    expr: '"Sleep performance %"'
+    synonyms: ["sleep quality", "quality score", "performance"]
+
+  - name: respiratory_rate
+    type: average
+    description: "Average breaths per minute during sleep"
+    expr: '"Respiratory rate (rpm)"'
+    synonyms: ["breathing rate", "breath rate"]
+
+  - name: total_asleep_min
+    type: sum
+    description: "Total minutes spent asleep"
+    expr: '"Asleep duration (min)"'
+    synonyms: ["total sleep time", "asleep time"]
+
+  - name: avg_asleep_min
+    type: average
+    description: "Average minutes asleep per cycle"
+    expr: '"Asleep duration (min)"'
+    synonyms: ["average sleep duration", "avg sleep time"]
+
+  - name: total_in_bed_min
+    type: sum
+    description: "Total minutes spent in bed"
+    expr: '"In bed duration (min)"'
+    synonyms: ["total time in bed", "bed time"]
+
+  - name: avg_in_bed_min
+    type: average
+    description: "Average minutes in bed per cycle"
+    expr: '"In bed duration (min)"'
+    synonyms: ["average time in bed"]
+
+  - name: total_light_sleep_min
+    type: sum
+    description: "Total minutes in light sleep phase"
+    expr: '"Light sleep duration (min)"'
+    synonyms: ["light sleep", "light sleep time"]
+
+  - name: avg_light_sleep_min
+    type: average
+    description: "Average minutes of light sleep per cycle"
+    expr: '"Light sleep duration (min)"'
+
+  - name: total_deep_sleep_min
+    type: sum
+    description: "Total minutes in deep sleep phase"
+    expr: '"Deep (SWS) duration (min)"'
+    synonyms: ["deep sleep", "slow wave sleep", "SWS"]
+
+  - name: avg_deep_sleep_min
+    type: average
+    description: "Average minutes of deep sleep per cycle"
+    expr: '"Deep (SWS) duration (min)"'
+
+  - name: total_rem_min
+    type: sum
+    description: "Total minutes in REM sleep phase"
+    expr: '"REM duration (min)"'
+    synonyms: ["REM sleep", "REM time"]
+
+  - name: avg_rem_min
+    type: average
+    description: "Average minutes of REM sleep per cycle"
+    expr: '"REM duration (min)"'
+
+  - name: total_awake_min
+    type: sum
+    description: "Total minutes awake during sleep cycles"
+    expr: '"Awake duration (min)"'
+    synonyms: ["awake time", "time awake"]
+
+  - name: avg_awake_min
+    type: average
+    description: "Average minutes awake during sleep cycles"
+    expr: '"Awake duration (min)"'
+
+  - name: sleep_need
+    type: average
+    description: "Estimated sleep need in minutes"
+    expr: '"Sleep need (min)"'
+    synonyms: ["recommended sleep", "sleep requirement"]
+
+  - name: sleep_debt
+    type: average
+    description: "Average sleep deficit in minutes"
+    expr: '"Sleep debt (min)"'
+    synonyms: ["sleep deficit", "missed sleep"]
+
+  - name: sleep_efficiency
+    type: average
+    description: "Percentage of time in bed spent asleep"
+    expr: '"Sleep efficiency %"'
+    synonyms: ["efficiency", "sleep efficiency percentage"]
+
+  - name: sleep_consistency
+    type: average
+    description: "Consistency of sleep schedule as percentage"
+    expr: '"Sleep consistency %"'
+    synonyms: ["consistency", "schedule consistency"]
+
+  - name: total_sleep_hours
+    type: custom
+    description: "Total hours of sleep"
+    expr: 'SUM("Asleep duration (min)") / 60.0'
+    synonyms: ["hours slept", "total hours"]
+
+  - name: avg_sleep_hours
+    type: custom
+    description: "Average hours of sleep per cycle"
+    expr: 'AVG("Asleep duration (min)") / 60.0'
+    synonyms: ["average hours", "avg hours slept"]

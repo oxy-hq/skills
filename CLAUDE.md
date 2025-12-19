@@ -231,6 +231,29 @@ When Claude Code is testing Oxy assets:
 5. **Check for variables**: Look for `{{ }}` in SQL files before running
 6. **Use dry-run for SQL**: Always test SQL queries with `--dry-run` before executing
 
+### CRITICAL: Using Claude Code Skills
+
+**Semantic Layer Work**: When working with Oxy semantic layer files (creating, updating, or validating `.view.yml` or `.topic.yml` files), you MUST use the `oxy-semantic-layer` skill. DO NOT attempt to create or modify semantic layer files manually without using this skill first.
+
+**How to use the skill**:
+```bash
+# Invoke the skill with your semantic layer task
+/oxy-semantic-layer Create views and topics for [your data description]
+```
+
+The skill has comprehensive knowledge of:
+- Correct view file structure (name, datasource, table, entities, dimensions, measures)
+- Proper topic file structure (name, description, base_view, views)
+- Entity design and join relationships
+- Required field formats (expr vs sql, proper types, samples as strings)
+- Common pitfalls and errors
+
+**Why this matters**: Semantic layer files have specific schemas and requirements that are easy to get wrong. The skill ensures:
+- Correct YAML structure and field names
+- Proper data types (datetime not timestamp, samples as strings)
+- Valid measure aggregation types (sum, average, count, etc.)
+- Correct entity-dimension relationships for joins
+
 
 ## Best Practices
 
