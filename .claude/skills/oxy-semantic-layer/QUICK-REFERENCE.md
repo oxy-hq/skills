@@ -1,0 +1,164 @@
+# Oxy Semantic Layer Quick Reference
+
+## Commands
+
+```bash
+# 1. Generate database schemas
+oxy sync
+
+# 2. Validate semantic layer
+oxy build
+
+# 3. Start semantic engine
+oxy semantic-engine --dev-mode
+```
+
+## File Locations
+
+- Views: `semantics/views/*.view.yml`
+- Topics: `semantics/topics/*.topic.yml`
+- Database schemas: `.databases/`
+- Configuration: `config.yml`
+
+## View File Checklist
+
+```yaml
+✓ name: string
+✓ description: string
+✓ datasource: string (from config.yml)
+✓ table: "schema.table"
+✓ entities: [...]
+  ✓ Primary entity (required)
+  ✓ Foreign entities (optional)
+✓ dimensions: [...]
+  ✓ Entity key dimensions
+  ✓ Regular attributes
+  ✓ Calculated fields
+✓ measures: [...]
+  ✓ Basic aggregations
+  ✓ Filtered measures
+  ✓ Custom calculations
+```
+
+## Entity Rules
+
+1. **One primary entity per view** (required)
+2. **Entity keys reference dimension names**, not columns
+3. **Use same entity names across views** to enable joins
+4. **Foreign entities** create relationships to other views
+
+## Dimension Types
+
+| Type | Example | Common Use |
+|------|---------|------------|
+| `string` | "active" | Categories, IDs, text |
+| `number` | 42, 3.14 | Counts, amounts, metrics |
+| `date` | "2024-01-01" | Dates without time |
+| `datetime` | "2024-01-01 10:30:00" | Timestamps |
+| `boolean` | true, false | Flags, indicators |
+
+## Measure Types
+
+| Type | Description | Requires expr |
+|------|-------------|---------------|
+| `count` | Count rows | No |
+| `count_distinct` | Count unique values | Yes |
+| `sum` | Sum values | Yes |
+| `average` | Average values | Yes |
+| `median` | Median value | Yes |
+| `min` | Minimum value | Yes |
+| `max` | Maximum value | Yes |
+| `stddev` | Standard deviation | Yes |
+| `custom` | Custom SQL expression | Yes |
+
+## Common Patterns
+
+### Date Parts
+
+```yaml
+- name: year
+  type: number
+  expr: "EXTRACT(YEAR FROM date_column)"
+```
+
+### Categorical Ranges
+
+```yaml
+- name: price_tier
+  type: string
+  expr: "CASE WHEN price < 100 THEN 'Low' WHEN price < 500 THEN 'Medium' ELSE 'High' END"
+```
+
+### Filtered Measures
+
+```yaml
+- name: active_count
+  type: count
+  filters:
+    - expr: "{{status}} = 'active'"
+
+- name: high_value_revenue
+  type: sum
+  expr: amount
+  filters:
+    - expr: "{{amount}} >= 1000"
+```
+
+### Correlations
+
+```yaml
+- name: temp_sales_correlation
+  type: custom
+  expr: "CORR(temperature, sales)"
+```
+
+## Topic Default Filters
+
+```yaml
+default_filters:
+  # Single value
+  - field: table.column
+    filter_type:
+      eq:
+        value: "active"
+
+  # Array values
+  - field: table.status
+    filter_type:
+      not_in:
+        values: ["cancelled", "test"]
+
+  # Date range
+  - field: table.date
+    filter_type:
+      in_date_range:
+        from: "90 days ago"
+        to: "now"
+```
+
+## Validation Workflow
+
+1. Create/edit view files
+2. Create/edit topic files
+3. Run `oxy build`
+4. Fix any errors
+5. Test with `oxy semantic-engine --dev-mode`
+6. Query using natural language
+
+## Common Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Entity key not found" | Key references column not dimension | Change entity key to dimension name |
+| "View not found" | File not in right location | Move to `semantics/views/` |
+| "Invalid SQL" | Bad expr syntax | Check column names and SQL syntax |
+| "Cannot join" | Entity names don't match | Use identical entity names |
+
+## Best Practices
+
+1. **One topic per view** to avoid duplication
+2. **Add synonyms** for natural language queries
+3. **Include samples** for categorical dimensions
+4. **Use descriptive names** (snake_case)
+5. **Write business-friendly descriptions**
+6. **Test incrementally** after each change
