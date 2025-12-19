@@ -1,0 +1,17 @@
+{
+  "interaction_id": "int-20241105-100000",
+  "customer_id": "example-customer",
+  "type": "support_ticket",
+  "timestamp": "2024-11-05T10:00:00Z",
+  "subject": "Integration Issue with API",
+  "summary": "Customer reported authentication errors when connecting to API. Investigated and found API key had expired. Issued new key and confirmed resolution with customer.",
+  "outcome": "resolved",
+  "participants": ["Support Team", "Alex Johnson"],
+  "tags": ["technical", "api", "resolved"],
+  "metadata": {
+    "duration_minutes": 45,
+    "ticket_number": "TICKET-12345",
+    "priority": "high",
+    "resolution_time_hours": 2
+  }
+}

@@ -1,0 +1,7 @@
+# Ignore customer data files (optional - comment out if you want to version control customer data)
+# data/customers/*.json
+# data/interactions/**/*.json
+
+# Keep the example customer for reference
+!data/customers/example-customer.json
+!data/interactions/example-customer/*.json

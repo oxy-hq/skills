@@ -1,0 +1,17 @@
+{
+  "interaction_id": "int-20241107-143000",
+  "customer_id": "example-customer",
+  "type": "call",
+  "timestamp": "2024-11-07T14:30:00Z",
+  "subject": "Q4 Planning Discussion",
+  "summary": "Discussed upcoming Q4 initiatives and potential expansion of services. Customer expressed interest in additional features. Agreed to schedule follow-up demo next week.",
+  "outcome": "follow_up_needed",
+  "participants": ["Sarah Chen", "Alex Johnson"],
+  "tags": ["planning", "upsell"],
+  "metadata": {
+    "duration_minutes": 30,
+    "sentiment": "positive",
+    "priority": "medium",
+    "next_action": "Schedule product demo for week of Nov 14"
+  }
+}

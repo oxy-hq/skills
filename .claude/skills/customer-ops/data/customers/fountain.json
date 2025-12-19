@@ -1,0 +1,18 @@
+{
+  "customer_id": "fountain",
+  "name": "Fountain",
+  "company": "Fountain",
+  "email": "andrew@fountain.com",
+  "phone": "",
+  "status": "active",
+  "tags": ["enterprise", "recruiting", "data-analytics"],
+  "created_at": "2024-11-07T19:51:00Z",
+  "updated_at": "2024-11-07T19:51:00Z",
+  "metadata": {
+    "industry": "HR Tech / Recruiting",
+    "primary_contact": "Andrew",
+    "use_case": "Job opening analytics and workflow automation",
+    "tech_stack": "Oxy semantic engine, workflows",
+    "account_team": ["Robert Yi", "Nick Reshetnikov", "Hai Tran"]
+  }
+}

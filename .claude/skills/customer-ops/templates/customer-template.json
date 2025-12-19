@@ -1,0 +1,12 @@
+{
+  "customer_id": "",
+  "name": "",
+  "company": "",
+  "email": "",
+  "phone": "",
+  "status": "prospect",
+  "tags": [],
+  "created_at": "",
+  "updated_at": "",
+  "metadata": {}
+}
