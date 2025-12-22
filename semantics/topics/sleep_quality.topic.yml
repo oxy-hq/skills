@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/topic.json
-name: sleep_quality
-description: "Overall sleep quality and performance metrics including quality scores, efficiency, and consistency"
-base_view: sleep_cycles
-views:
-  - sleep_cycles

@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/topic.json
-name: sleep_phases
-description: "Breakdown of sleep phases including light, deep (slow-wave), and REM sleep stages"
-base_view: sleep_cycles
-views:
-  - sleep_cycles

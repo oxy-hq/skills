@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/topic.json
-name: sleep_timing
-description: "Sleep schedule patterns and timing analysis including bedtime, wake time, and nap tracking"
-base_view: sleep_cycles
-views:
-  - sleep_cycles
