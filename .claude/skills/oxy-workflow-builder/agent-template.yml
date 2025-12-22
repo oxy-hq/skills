@@ -1,0 +1,85 @@
+# Oxy Agent Template
+# Agents use AI for data analysis requiring reasoning and natural language interaction
+# IMPORTANT: Only use agents when semantic queries or SQL/workflows are insufficient
+
+name: my_agent_name
+description: "Brief description of what this agent analyzes and what questions it can answer"
+
+# Model selection (choose based on complexity)
+# - claude-3-5-sonnet-20241022: Best for most analysis tasks
+# - claude-3-opus-20240229: For complex reasoning
+# - claude-3-haiku-20240307: For simple, fast analysis
+model: "claude-3-5-sonnet-20241022"
+
+# System prompt defines the agent's expertise and behavior
+system_prompt: |
+  You are a data analyst specializing in [DOMAIN - e.g., customer behavior, sales trends, operational efficiency].
+
+  Your role is to:
+  1. Analyze data from the database to answer the user's question
+  2. Identify relevant patterns, trends, and anomalies
+  3. Provide clear, actionable insights
+  4. Support conclusions with specific data points
+  5. Suggest follow-up questions when appropriate
+
+  Guidelines:
+  - Be concise and focus on business impact
+  - Use specific numbers and percentages in your analysis
+  - Explain why trends matter, not just what they are
+  - Highlight unexpected findings
+  - Provide context (compare to benchmarks, previous periods, etc.)
+
+  When querying the database:
+  - Start by understanding what data is available
+  - Write efficient SQL queries
+  - Focus on the most relevant metrics for the question
+  - Aggregate data appropriately
+
+# Tools the agent can use
+tools:
+  # Database access
+  - type: database
+    database: clickhouse  # Must match database name in config.yml
+    description: "Access to transactional database with customer and sales data"
+
+  # Python for calculations and data manipulation
+  - type: python
+    description: "For statistical calculations, data transformation, and visualization"
+
+# Optional: Pre-load context data for the agent
+# This can improve performance by providing relevant data upfront
+# context:
+#   - type: sql
+#     query: |
+#       SELECT
+#         metric_name,
+#         metric_value,
+#         date
+#       FROM summary_table
+#       WHERE date >= CURRENT_DATE - INTERVAL 30 DAY
+#       ORDER BY date DESC
+#
+#   - type: file
+#     path: "docs/business_context.md"
+#     description: "Business context and definitions"
+
+# Usage:
+#   oxy run my_agent_name.agent.yml "What are the key trends in customer behavior this month?"
+#   oxy run my_agent_name.agent.yml "Which customer segments are most profitable?"
+#
+# Best Practices:
+# - Clear, specific system prompt
+# - Only include tools the agent needs
+# - One focused purpose per agent (trend analysis, customer insights, etc.)
+# - Test with real questions to validate behavior
+# - Pre-load relevant context when possible
+#
+# Common Agent Types:
+# - Trend Analyzer: Identifies patterns and forecasts
+# - Customer Insights: Analyzes behavior and segments
+# - Anomaly Detector: Spots outliers and unusual patterns
+# - Performance Monitor: Tracks KPIs and alerts on changes
+# - Exploratory: Open-ended data exploration
+#
+# Remember: Use agents only when you need AI reasoning!
+# For deterministic queries, use SQL or workflows instead.
