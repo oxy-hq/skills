@@ -1,6 +1,0 @@
-sleep_efficiency_stats:
-  file_path: data/sleep_performance/b4d0d9f7-f871-4bac-8b55-ec33858e999a.parquet
-sleep_duration_by_type:
-  file_path: data/sleep_performance/89fa854f-9af2-4088-97a3-ea3241ede15d.parquet
-sleep_performance_trends:
-  file_path: data/sleep_performance/99fbc8f9-37cb-4aeb-8d23-8115afed033b.parquet
