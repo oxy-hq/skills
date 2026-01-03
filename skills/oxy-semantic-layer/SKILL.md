@@ -270,12 +270,36 @@ views:
 # Optional: Apply filters to all queries
 default_filters:
   - field: "status"
-    op: "not_in"
-    value: ["cancelled", "test"]
+    not_in:
+      values: ["cancelled", "test"]
   - field: "is_deleted"
-    op: "eq"
-    value: false
+    eq:
+      value: false
 ```
+
+### Filter Types
+
+Filters use a nested structure with the operator as a key:
+
+- **Scalar filters** (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`): Use `value` field
+  ```yaml
+  - field: "amount"
+    gt:
+      value: 0
+  ```
+- **Array filters** (`in`, `not_in`): Use `values` field (array)
+  ```yaml
+  - field: "status"
+    not_in:
+      values: ["cancelled", "test"]
+  ```
+- **Date range filters** (`in_date_range`, `not_in_date_range`): Use `from` and `to` fields
+  ```yaml
+  - field: "order_date"
+    in_date_range:
+      from: "2023-01-01"
+      to: "2023-12-31"
+  ```
 
 ## Building Process
 
@@ -537,6 +561,15 @@ views:
 
 default_filters:
   - field: "order_status"
-    op: "not_in"
-    value: ["cancelled", "test"]
+    not_in:
+      values: ["cancelled", "test"]
 ```
+
+## Important: Do NOT Add yaml-language-server Schema Comments
+
+**NEVER add `# yaml-language-server: $schema=...` comments to view or topic files.**
+
+- Oxy does not publish JSON schemas for view.yml or topic.yml files at predictable URLs
+- Adding non-existent schema URLs causes IDE validation errors and confusion
+- If you're unsure whether a schema URL exists, don't include it
+- Only add schema comments if you have verified the URL returns a valid JSON schema
