@@ -1,3 +1,16 @@
-.checkpoint
-.databases
-.semantics
+# MacOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Oxy artifacts
+.oxy_state/
+.databases/
+
+# Plugin settings
+.claude/*.local.md

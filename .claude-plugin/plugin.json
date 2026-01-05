@@ -1,0 +1,23 @@
+{
+  "name": "oxy-skills",
+  "version": "1.0.0",
+  "description": "Complete Oxy toolkit for Claude Code: build semantic layers, create workflows, and validate configurations",
+  "author": {
+    "name": "Oxy Team",
+    "url": "https://oxy.tech"
+  },
+  "homepage": "https://docs.oxy.tech",
+  "repository": "https://github.com/oxy-hq/skills",
+  "license": "MIT",
+  "keywords": [
+    "oxy",
+    "analytics",
+    "semantic-layer",
+    "data",
+    "sql",
+    "workflows",
+    "business-intelligence",
+    "data-pipeline",
+    "ai-agents"
+  ]
+}
