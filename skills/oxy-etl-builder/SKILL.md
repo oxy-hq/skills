@@ -1,6 +1,6 @@
 ---
 name: oxy-etl-builder
-description: Build or extend ETL pipelines using DLT. Use when: (1) starting a new ETL project, (2) adding API connectors (Toast, Square, etc.), (3) adding spreadsheet/document ingestion, or (4) extending existing pipelines with new sources.
+description: "Build or extend ETL pipelines using DLT. Use when: (1) starting a new ETL project, (2) adding API connectors (Toast, Square, etc.), (3) adding spreadsheet/document ingestion, or (4) extending existing pipelines with new sources."
 ---
 
 # ETL Pipeline Builder
