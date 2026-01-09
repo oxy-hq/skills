@@ -135,6 +135,7 @@ Before marking complete, verify:
 - [ ] **CLI**: Runner has Typer CLI with run, test, config commands
 - [ ] **Configuration**: Secrets via env vars or settings module
 - [ ] **Testing**: Mock client/data available for dry-run mode
+- [ ] **Makefile**: Add targets for preview/test/run/schema (see etl-style-guide.md)
 
 ## Key Patterns
 

@@ -338,3 +338,80 @@ def config():
 if __name__ == "__main__":
     app()
 ```
+
+## Makefile Integration
+
+After creating a new pipeline, **always add Makefile targets** for common operations. This provides a consistent interface for running pipelines.
+
+### Required Targets
+
+For each pipeline, add these targets to the project's `Makefile`:
+
+```makefile
+# Testing & Pipeline - <Provider/Entity>
+preview-<name>: ## Preview data without loading
+	uv run python -m etl.runners.<runner> preview --file <default_file>
+
+test-<name>: ## Test pipeline with DuckDB (dry-run)
+	uv run python -m etl.runners.<runner> test --file <default_file>
+
+run-<name>: ## Run pipeline to load data into warehouse
+	uv run python -m etl.runners.<runner> run --file <default_file>
+
+schema-<name>: ## Show data schema
+	uv run python -m etl.runners.<runner> schema
+```
+
+### Naming Convention
+
+| Pipeline Type | Target Prefix | Examples |
+|--------------|---------------|----------|
+| API connector | `<provider>-<entity>` | `toast-labor`, `toast-sales` |
+| File/CSV | `<source>` | `olo`, `income-statement` |
+
+### Example: File-Based Pipeline
+
+```makefile
+# Testing & Pipeline - OLO Weekly Orders
+preview-olo: ## Preview OLO CSV data without loading
+	uv run python -m etl.runners.olo_weekly_orders preview --file data/olo_weekly_online_orders_by_provider.csv
+
+test-olo: ## Test OLO pipeline with DuckDB (dry-run)
+	uv run python -m etl.runners.olo_weekly_orders test --file data/olo_weekly_online_orders_by_provider.csv
+
+run-olo: ## Run OLO pipeline to load data into ClickHouse
+	uv run python -m etl.runners.olo_weekly_orders run --file data/olo_weekly_online_orders_by_provider.csv
+
+schema-olo: ## Show OLO weekly orders data schema
+	uv run python -m etl.runners.olo_weekly_orders schema
+```
+
+### Example: API-Based Pipeline
+
+```makefile
+# Testing & Pipeline - Toast Labor
+test-toast-labor: ## Run Toast labor pipeline with mock data
+	uv run python -m etl.runners.toast_labor test
+
+run-toast-labor: ## Run Toast labor pipeline with real data
+	uv run python -m etl.runners.toast_labor run
+
+local-toast-labor: ## Test with real API + local DuckDB
+	uv run python -m etl.runners.toast_labor run --dry-run --real-api
+
+config-toast-labor: ## Show pipeline configuration
+	uv run python -m etl.runners.toast_labor config
+
+schema-toast-labor: ## Show data schema
+	uv run python -m etl.runners.toast_labor schema
+```
+
+### Checklist
+
+When adding a new pipeline, ensure:
+
+- [ ] All common operations have Makefile targets
+- [ ] Targets follow naming convention (`<source>-<entity>` or `<source>`)
+- [ ] Each target has a `## description` comment for `make help`
+- [ ] Default file paths are set for file-based pipelines
+- [ ] Add to `.PHONY` if needed

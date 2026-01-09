@@ -767,3 +767,4 @@ Before completing a spreadsheet pipeline:
 - [ ] DLT resource has appropriate primary key
 - [ ] Runner has detect and preview commands for validation
 - [ ] Empty rows/sections are skipped properly
+- [ ] Makefile targets added for preview/test/run/schema commands
