@@ -20,7 +20,10 @@ etl/
 │   │   ├── auth.py         # Optional: auth helpers
 │   │   ├── client.py       # API client
 │   │   ├── rate_limiter.py # Optional: rate limiting
-│   │   └── <entity>_source.py  # DLT sources
+│   │   ├── <entity>_source.py  # DLT sources
+│   │   └── scripts/        # Optional: browser/ad-hoc scripts
+│   │       ├── README.md   # Usage documentation
+│   │       └── <name>_scraper.js  # Browser console scripts
 │   │
 │   └── spreadsheets/       # File-based sources
 │       ├── __init__.py
@@ -415,3 +418,106 @@ When adding a new pipeline, ensure:
 - [ ] Each target has a `## description` comment for `make help`
 - [ ] Default file paths are set for file-based pipelines
 - [ ] Add to `.PHONY` if needed
+
+## Browser Scripts (Ad-hoc Data Extraction)
+
+When a data source doesn't provide an API but exposes data in web UIs (charts, tables, dashboards), use browser console scripts to extract it.
+
+### Location
+
+```
+etl/sources/<provider>/scripts/
+├── README.md              # Usage documentation
+├── <chart>_scraper.js     # Highcharts, Chart.js extractors
+└── <table>_extractor.js   # HTML table extractors
+```
+
+### Naming
+
+| Type | Pattern | Examples |
+|------|---------|----------|
+| Chart scraper | `<chart_type>_scraper.js` | `highcharts_scraper.js` |
+| Table extractor | `<page>_extractor.js` | `orders_table_extractor.js` |
+| General | `<purpose>.js` | `export_helper.js` |
+
+### Script Structure
+
+```javascript
+/**
+ * <Provider> <Page> - <Chart/Table> Scraper
+ * ==========================================
+ *
+ * <Description of what this extracts>
+ *
+ * Usage:
+ *   1. Navigate to <specific page URL or path>
+ *   2. Ensure <element> is fully rendered
+ *   3. Open DevTools Console (F12)
+ *   4. Paste this script and press Enter
+ *   5. CSV copied to clipboard
+ *   6. Save to data/<filename>.csv
+ *
+ * Expected output format:
+ *   <column1>,<column2>,<column3>
+ *   <example row>
+ *
+ * Then run:
+ *   <make target or pipeline command>
+ */
+
+// Extraction logic...
+
+// Always end with helpful console output
+copy(csv);
+console.log(`Copied ${rows.length} rows to clipboard as CSV.`);
+console.log("Next: save to data/<name>.csv and run: make run-<target>");
+```
+
+### Workflow
+
+```
+Browser UI → Browser Script → CSV → data/ → DLT Source → Warehouse
+             (scripts/)              dir    (<entity>_source.py)
+```
+
+### Best Practices
+
+1. **Match output to DLT source input**: Column names should match what `<entity>_source.py` expects
+2. **Include validation**: Check elements exist before extracting, throw clear errors
+3. **Log row counts**: Help user verify extraction worked
+4. **Document target page**: Pages change; note the URL/path and UI elements targeted
+5. **Keep scripts self-contained**: No external dependencies, paste-and-run
+
+### When to Use Browser Scripts
+
+| Scenario | Approach |
+|----------|----------|
+| API available | Use API client (`client.py`) |
+| Bulk export available | Use file-based source (`<entity>_source.py`) |
+| Only web UI with charts/tables | Browser script → CSV → file source |
+| One-time extraction | Browser script is fine |
+| Recurring extraction | Consider if browser automation (Playwright) is worth it |
+
+### README Template
+
+Each `scripts/` directory should have a README.md:
+
+```markdown
+# <Provider> Browser Scripts
+
+Ad-hoc scripts for extracting data from <Provider> web interfaces.
+
+## Scripts
+
+| Script | Purpose | Output |
+|--------|---------|--------|
+| `<name>.js` | <description> | CSV (clipboard) |
+
+## Usage
+
+1. Navigate to <page>
+2. Open DevTools Console
+3. Paste script, press Enter
+4. Save clipboard to `data/<name>.csv`
+5. Run: `make run-<target>`
+```
