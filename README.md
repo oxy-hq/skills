@@ -33,6 +33,14 @@ Creates data workflows, SQL queries, and AI agents following Oxy patterns.
 - Creates `*.workflow.yml` and `*.agent.yml` files
 - Tests with `oxy run`
 
+**[oxy-etl-builder](skills/oxy-etl-builder/SKILL.md)**
+Builds ETL pipelines using DLT (data-load-tools) for loading data into warehouses.
+
+- Sets up API connectors (Toast, Square, Stripe, etc.)
+- Creates spreadsheet/file ingestion pipelines
+- Generates `etl/sources/`, `etl/runners/`, and transform files
+- Supports ClickHouse, Snowflake, MotherDuck, DuckDB
+
 ### Commands
 
 | Command         | Description                              |
@@ -60,8 +68,13 @@ skills/
 │   ├── README.md        # User-facing documentation
 │   ├── QUICK-REFERENCE.md
 │   └── *.yml            # Templates
-└── oxy-workflow-builder/
-    └── ...
+├── oxy-workflow-builder/
+│   └── ...
+└── oxy-etl-builder/
+    ├── SKILL.md         # ETL skill instructions
+    ├── README.md        # User documentation
+    ├── playbook-*.md    # Source-specific guides
+    └── templates/       # Code templates
 
 commands/
 ├── validate.md          # Slash command implementations
