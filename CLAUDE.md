@@ -26,8 +26,13 @@ oxy-template/
 │   │   ├── README.md        # User documentation
 │   │   ├── QUICK-REFERENCE.md
 │   │   └── *.yml            # Templates and examples
-│   └── oxy-workflow-builder/
-│       └── ...
+│   ├── oxy-workflow-builder/
+│   │   └── ...
+│   └── oxy-etl-builder/
+│       ├── SKILL.md         # ETL skill instructions
+│       ├── README.md        # User documentation
+│       ├── playbook-*.md    # Source-specific guides
+│       └── templates/       # Code templates
 ├── commands/                # Slash commands
 │   ├── validate.md
 │   ├── build.md
@@ -284,6 +289,7 @@ When modifying skills or documentation, understand these Oxy concepts:
 - **Topics**: Organize views by business domain
 - **Workflows**: Multi-step ETL/analysis pipelines
 - **Agents**: AI-powered analysis using LLMs
+- **ETL Pipelines**: Data extraction using DLT (data-load-tools) for loading into warehouses
 
 ### Oxy CLI Integration
 
@@ -306,6 +312,7 @@ Oxy projects use these file patterns:
 - `*.agent.yml` - AI agent configurations
 - `config.yml` - Project configuration
 - `semantics.yml` - Semantic layer entry point
+- `etl/` - ETL pipeline directory (sources, runners, transforms)
 
 ## Best Practices
 
