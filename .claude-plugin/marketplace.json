@@ -1,21 +1,16 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "oxy-hq",
-  "version": "1.0.0",
-  "description": "Official Oxy skills for data analytics with Claude Code",
   "owner": {
     "name": "Oxy Team",
     "email": "support@oxy.tech"
   },
+  "metadata": {
+    "description": "Official Oxy skills for data analytics with Claude Code",
+    "version": "1.0.0"
+  },
   "plugins": [
     {
       "name": "oxy-skills",
-      "description": "Complete Oxy toolkit for Claude Code: build semantic layers, create workflows, and validate configurations",
-      "version": "1.0.0",
-      "author": {
-        "name": "Oxy Team",
-        "email": "support@oxy.tech"
-      },
       "source": "./",
       "category": "development"
     }
