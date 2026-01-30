@@ -9,7 +9,8 @@
       "Skill(plugin-dev:command-development)",
       "Skill(plugin-dev:command-development:*)",
       "Skill(plugin-dev:agent-development)",
-      "Skill(plugin-dev:agent-development:*)"
+      "Skill(plugin-dev:agent-development:*)",
+      "mcp__deepwiki__ask_question"
     ]
   }
 }

@@ -1,0 +1,94 @@
+# Simple Dashboard Template
+# Copy and customize for your needs
+
+name: my_dashboard
+
+description: |
+  A simple dashboard showing key metrics and trends.
+
+  Customize:
+  - Update the database name
+  - Modify SQL queries for your tables
+  - Adjust display titles and chart configurations
+
+tasks:
+  # Summary metrics
+  - name: summary_metrics
+    type: execute_sql
+    database: clickhouse          # Change to your database
+    sql_query: |
+      SELECT
+        COUNT(*) as total_records,
+        COUNT(DISTINCT category) as categories,
+        ROUND(SUM(amount), 2) as total_amount,
+        ROUND(AVG(amount), 2) as avg_amount
+      FROM your_table               -- Change to your table
+      WHERE created_at >= '2024-01-01'
+
+  # Trend over time
+  - name: monthly_trend
+    type: execute_sql
+    database: clickhouse
+    sql_query: |
+      SELECT
+        toStartOfMonth(created_at) as month,
+        COUNT(*) as count,
+        ROUND(SUM(amount), 2) as total
+      FROM your_table
+      WHERE created_at >= '2024-01-01'
+      GROUP BY month
+      ORDER BY month
+
+  # Breakdown by category
+  - name: by_category
+    type: execute_sql
+    database: clickhouse
+    sql_query: |
+      SELECT
+        category,
+        COUNT(*) as count,
+        ROUND(SUM(amount), 2) as total
+      FROM your_table
+      WHERE created_at >= '2024-01-01'
+      GROUP BY category
+      ORDER BY total DESC
+
+display:
+  - type: markdown
+    content: |
+      # My Dashboard
+
+      Overview of key metrics for 2024.
+
+  - type: table
+    title: "Summary Metrics"
+    data: summary_metrics
+
+  - type: markdown
+    content: |
+      ---
+      ## Trends & Breakdown
+
+  - type: line_chart
+    title: "Monthly Trend"
+    data: monthly_trend
+    x: month
+    y: total
+    x_axis_label: "Month"
+    y_axis_label: "Total Amount"
+
+  - type: bar_chart
+    title: "By Category"
+    data: by_category
+    x: category
+    y: total
+
+  - type: pie_chart
+    title: "Category Distribution"
+    data: by_category
+    name: category
+    value: total
+
+  - type: table
+    title: "Category Details"
+    data: by_category

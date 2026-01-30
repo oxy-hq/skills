@@ -1,7 +1,7 @@
 {
   "name": "oxy-skills",
-  "version": "1.1.0",
-  "description": "Complete Oxy toolkit for Claude Code: build semantic layers, create workflows, ETL pipelines, and validate configurations",
+  "version": "1.2.0",
+  "description": "Complete Oxy toolkit for Claude Code: build semantic layers, create workflows, ETL pipelines, data apps, and validate configurations",
   "author": {
     "name": "Oxy Team",
     "url": "https://oxy.tech"
@@ -20,6 +20,8 @@
     "data-pipeline",
     "ai-agents",
     "etl",
-    "dlt"
+    "dlt",
+    "data-apps",
+    "dashboards"
   ]
 }
