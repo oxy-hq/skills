@@ -41,6 +41,14 @@ Builds ETL pipelines using DLT (data-load-tools) for loading data into warehouse
 - Generates `etl/sources/`, `etl/runners/`, and transform files
 - Supports ClickHouse, Snowflake, MotherDuck, DuckDB
 
+**[oxy-app-builder](skills/oxy-app-builder/SKILL.md)**
+Creates data apps (`*.app.yml`) - interactive dashboards combining tasks and visualizations.
+
+- Builds SQL, workflow, semantic query, and agent tasks
+- Renders outputs as tables, charts (line, bar, pie), and markdown
+- Supports plan-first workflow with user approval
+- Validates task-to-display data references
+
 ### Commands
 
 | Command         | Description                              |
@@ -70,11 +78,17 @@ skills/
 │   └── *.yml            # Templates
 ├── oxy-workflow-builder/
 │   └── ...
-└── oxy-etl-builder/
-    ├── SKILL.md         # ETL skill instructions
+├── oxy-etl-builder/
+│   ├── SKILL.md         # ETL skill instructions
+│   ├── README.md        # User documentation
+│   ├── playbook-*.md    # Source-specific guides
+│   └── templates/       # Code templates
+└── oxy-app-builder/
+    ├── SKILL.md         # App builder skill instructions
     ├── README.md        # User documentation
-    ├── playbook-*.md    # Source-specific guides
-    └── templates/       # Code templates
+    ├── QUICK-REFERENCE.md
+    ├── templates/       # App templates
+    └── examples/        # Example prompts
 
 commands/
 ├── validate.md          # Slash command implementations

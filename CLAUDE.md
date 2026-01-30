@@ -28,11 +28,17 @@ oxy-template/
 │   │   └── *.yml            # Templates and examples
 │   ├── oxy-workflow-builder/
 │   │   └── ...
-│   └── oxy-etl-builder/
-│       ├── SKILL.md         # ETL skill instructions
+│   ├── oxy-etl-builder/
+│   │   ├── SKILL.md         # ETL skill instructions
+│   │   ├── README.md        # User documentation
+│   │   ├── playbook-*.md    # Source-specific guides
+│   │   └── templates/       # Code templates
+│   └── oxy-app-builder/
+│       ├── SKILL.md         # App builder skill instructions
 │       ├── README.md        # User documentation
-│       ├── playbook-*.md    # Source-specific guides
-│       └── templates/       # Code templates
+│       ├── QUICK-REFERENCE.md
+│       ├── templates/       # App templates
+│       └── examples/        # Example prompts
 ├── commands/                # Slash commands
 │   ├── validate.md
 │   ├── build.md
@@ -290,6 +296,7 @@ When modifying skills or documentation, understand these Oxy concepts:
 - **Workflows**: Multi-step ETL/analysis pipelines
 - **Agents**: AI-powered analysis using LLMs
 - **ETL Pipelines**: Data extraction using DLT (data-load-tools) for loading into warehouses
+- **Apps**: Interactive dashboards combining tasks (SQL, workflows, agents) with displays (tables, charts, markdown)
 
 ### Oxy CLI Integration
 
@@ -310,6 +317,7 @@ Oxy projects use these file patterns:
 - `*.topic.yml` - Topic definitions
 - `*.workflow.yml` - Workflow definitions
 - `*.agent.yml` - AI agent configurations
+- `*.app.yml` - Data app definitions (dashboards)
 - `config.yml` - Project configuration
 - `semantics.yml` - Semantic layer entry point
 - `etl/` - ETL pipeline directory (sources, runners, transforms)

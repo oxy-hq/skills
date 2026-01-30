@@ -5,8 +5,8 @@
     "email": "support@oxy.tech"
   },
   "metadata": {
-    "description": "Official Oxy skills for data analytics with Claude Code",
-    "version": "1.0.0"
+    "description": "Official Oxy skills for data analytics with Claude Code - semantic layers, workflows, ETL, and data apps",
+    "version": "1.2.0"
   },
   "plugins": [
     {
