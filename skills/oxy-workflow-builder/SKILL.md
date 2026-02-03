@@ -185,78 +185,92 @@ WHERE status = 'completed'
 Workflows orchestrate multi-step data operations:
 
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
 name: my_workflow
 description: "What this workflow accomplishes"
 
-steps:
+tasks:
   - name: step_1
-    description: "What this step does"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT * FROM source_table
       WHERE condition = true
 
   - name: step_2
-    description: "Transform data"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         column1,
         SUM(column2) as total
-      FROM {{ steps.step_1.result }}
+      FROM {{ step_1 }}
       GROUP BY column1
 
   - name: step_3
-    description: "Load to destination"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       INSERT INTO destination_table
-      SELECT * FROM {{ steps.step_2.result }}
+      SELECT * FROM {{ step_2 }}
 ```
 
 ### Workflow Best Practices
 
-1. **Name steps descriptively** - clear purpose for each step
-2. **Add descriptions** - explain what each step accomplishes
-3. **Reference previous steps** - `{{ steps.step_name.result }}`
+1. **Name tasks descriptively** - clear purpose for each task
+2. **Add descriptions** - explain what each task accomplishes
+3. **Reference previous task outputs** - `{{ task_name }}`
 4. **Keep workflows focused** - single pipeline per file
-5. **Test incrementally** - validate each step's SQL separately first
+5. **Test incrementally** - validate each task's SQL separately first
 6. **Document dependencies** - note what data/tables are required
 
 ### Common Workflow Patterns
 
 **ETL Pipeline:**
 ```yaml
-steps:
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
+tasks:
   - name: extract
-    description: "Extract raw data from source"
-    sql: SELECT * FROM source_table WHERE date = '{{ date }}'
+    type: execute_sql
+    database: my_database
+    sql_query: SELECT * FROM source_table WHERE date = '{{ date }}'
 
   - name: transform
-    description: "Clean and transform data"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         TRIM(name) as name,
         CAST(amount as DECIMAL(10,2)) as amount
-      FROM {{ steps.extract.result }}
+      FROM {{ extract }}
 
   - name: load
-    description: "Load to analytics table"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       INSERT INTO analytics.processed_data
-      SELECT * FROM {{ steps.transform.result }}
+      SELECT * FROM {{ transform }}
 ```
 
 **Aggregation Pipeline:**
 ```yaml
-steps:
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
+tasks:
   - name: daily_totals
-    description: "Calculate daily totals"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT date, SUM(amount) as total
       FROM transactions
       GROUP BY date
 
   - name: moving_average
-    description: "Add 7-day moving average"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         date,
         total,
@@ -264,7 +278,7 @@ steps:
           ORDER BY date
           ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
         ) as moving_avg_7d
-      FROM {{ steps.daily_totals.result }}
+      FROM {{ daily_totals }}
 ```
 
 ## Agent File Structure
@@ -272,6 +286,8 @@ steps:
 Agents use AI for analysis requiring reasoning:
 
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
 name: my_agent
 description: "What this agent analyzes"
 
@@ -316,6 +332,8 @@ context:
 
 **Trend Analysis Agent:**
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
 name: trend_analyzer
 description: "Analyzes trends and forecasts future patterns"
 
@@ -335,6 +353,8 @@ tools:
 
 **Customer Insights Agent:**
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
 name: customer_insights
 description: "Analyzes customer behavior and segments"
 
@@ -474,14 +494,22 @@ If views don't exist, create them first (oxy-semantic-layer skill), then use sem
 
 ### Data Pipeline (Use Workflow)
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
 name: daily_aggregation_pipeline
-steps:
+tasks:
   - name: extract_daily_data
-    sql: SELECT * FROM raw_data WHERE date = '{{ date }}'
+    type: execute_sql
+    database: my_database
+    sql_query: SELECT * FROM raw_data WHERE date = '{{ date }}'
   - name: aggregate
-    sql: SELECT category, SUM(amount) FROM {{ steps.extract_daily_data.result }} GROUP BY category
+    type: execute_sql
+    database: my_database
+    sql_query: SELECT category, SUM(amount) FROM {{ extract_daily_data }} GROUP BY category
   - name: load
-    sql: INSERT INTO aggregated_data SELECT * FROM {{ steps.aggregate.result }}
+    type: execute_sql
+    database: my_database
+    sql_query: INSERT INTO aggregated_data SELECT * FROM {{ aggregate }}
 ```
 
 ### Parameterized Query (Use SQL)
@@ -500,6 +528,8 @@ GROUP BY customer_id;
 
 ### Exploratory Analysis (Use Agent)
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
 name: data_explorer
 description: "Explores data to find insights"
 system_prompt: |
@@ -531,13 +561,13 @@ tools:
 
 ### Workflow Issues
 
-**Error: Step result not found**
-- Cause: Reference to non-existent step
-- Fix: Check step names match exactly: `{{ steps.step_name.result }}`
+**Error: Task result not found**
+- Cause: Reference to non-existent task
+- Fix: Check task names match exactly: `{{ task_name }}`
 
-**Error: Step fails partway**
-- Cause: SQL error in one step
-- Fix: Test each step's SQL separately first
+**Error: Task fails partway**
+- Cause: SQL error in one task
+- Fix: Test each task's SQL separately first
 
 ### Agent Issues
 

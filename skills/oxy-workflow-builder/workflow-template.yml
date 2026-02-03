@@ -1,15 +1,19 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
 # Oxy Workflow Template
 # Workflows orchestrate multi-step data operations (ETL, aggregation pipelines, etc.)
 
 name: my_workflow_name
 description: "Brief description of what this workflow accomplishes and why it exists"
 
-# Steps execute sequentially
-steps:
-  # Step 1: Extract data
+# Tasks execute sequentially
+tasks:
+  # Task 1: Extract data
   - name: extract_data
     description: "Extract raw data from source table"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         column1,
         column2,
@@ -20,22 +24,26 @@ steps:
         AND status NOT IN ('cancelled', 'test')
       ORDER BY timestamp_column
 
-  # Step 2: Transform data
+  # Task 2: Transform data
   - name: transform_data
     description: "Clean and transform extracted data"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         TRIM(column1) as column1,
         UPPER(column2) as column2,
         CAST(column3 as DECIMAL(10,2)) as column3,
         DATE(timestamp_column) as date
-      FROM {{ steps.extract_data.result }}
+      FROM {{ extract_data }}
       WHERE column3 > 0
 
-  # Step 3: Aggregate data
+  # Task 3: Aggregate data
   - name: aggregate_data
     description: "Aggregate transformed data by key dimensions"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         column1,
         column2,
@@ -43,27 +51,29 @@ steps:
         COUNT(*) as record_count,
         SUM(column3) as total_amount,
         AVG(column3) as avg_amount
-      FROM {{ steps.transform_data.result }}
+      FROM {{ transform_data }}
       GROUP BY
         column1,
         column2,
         DATE(date)
 
-  # Step 4: Load data
+  # Task 4: Load data
   - name: load_data
     description: "Load aggregated data to destination table"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       INSERT INTO {{ databases.database_name.schema_name }}.destination_table
-      SELECT * FROM {{ steps.aggregate_data.result }}
+      SELECT * FROM {{ aggregate_data }}
 
 # Usage:
 #   oxy run my_workflow_name.workflow.yml
 #
 # Best Practices:
-# - Name steps descriptively (extract, transform, load, aggregate, etc.)
-# - Add clear descriptions for each step
-# - Reference previous steps with {{ steps.step_name.result }}
-# - Test each step's SQL separately before combining
+# - Name tasks descriptively (extract, transform, load, aggregate, etc.)
+# - Add clear descriptions for each task
+# - Reference previous task outputs with {{ task_name }}
+# - Test each task's SQL separately before combining
 # - Keep workflows focused on a single pipeline
 # - Document what the workflow accomplishes
 #

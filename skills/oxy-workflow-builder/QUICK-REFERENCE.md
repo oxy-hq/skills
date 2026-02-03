@@ -66,28 +66,36 @@ ORDER BY column1;
 
 ### Workflow File
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
 name: workflow_name
 description: "What this workflow does"
 
-steps:
+tasks:
   - name: step_1
     description: "Extract data"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT * FROM source_table
       WHERE condition = true
 
   - name: step_2
     description: "Transform data"
-    sql: |
+    type: execute_sql
+    database: my_database
+    sql_query: |
       SELECT
         column1,
         SUM(column2) as total
-      FROM {{ steps.step_1.result }}
+      FROM {{ step_1 }}
       GROUP BY column1
 ```
 
 ### Agent File
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
 name: agent_name
 description: "What this agent analyzes"
 
@@ -129,18 +137,26 @@ WHERE status = 'completed'
 
 ### ETL Pipeline (Workflow)
 ```yaml
-steps:
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+
+tasks:
   - name: extract
-    sql: SELECT * FROM source WHERE date = '{{ date }}'
+    type: execute_sql
+    database: my_database
+    sql_query: SELECT * FROM source WHERE date = '{{ date }}'
   - name: transform
-    sql: SELECT clean_column FROM {{ steps.extract.result }}
+    type: execute_sql
+    database: my_database
+    sql_query: SELECT clean_column FROM {{ extract }}
   - name: load
-    sql: INSERT INTO dest SELECT * FROM {{ steps.transform.result }}
+    type: execute_sql
+    database: my_database
+    sql_query: INSERT INTO dest SELECT * FROM {{ transform }}
 ```
 
-### Step Reference (Workflow)
+### Task Reference (Workflow)
 ```yaml
-sql: SELECT * FROM {{ steps.previous_step.result }}
+sql_query: SELECT * FROM {{ previous_task_name }}
 ```
 
 ## Validation Workflow
@@ -162,10 +178,10 @@ sql: SELECT * FROM {{ steps.previous_step.result }}
 - ✅ Descriptive file names
 
 ### Workflows
-- ✅ Description for workflow and each step
-- ✅ Named steps clearly
-- ✅ Test each step's SQL separately
-- ✅ Reference previous steps correctly
+- ✅ Description for workflow and each task
+- ✅ Named tasks clearly
+- ✅ Test each task's SQL separately
+- ✅ Reference previous tasks correctly with `{{ task_name }}`
 - ✅ One pipeline per file
 
 ### Agents
@@ -181,7 +197,7 @@ sql: SELECT * FROM {{ steps.previous_step.result }}
 |-------|-------|-----|
 | "Variable not defined" | Missing -v parameter | Add `-v var=value` |
 | "Table not found" | Wrong table reference | Check `.databases/` schemas |
-| "Step not found" | Wrong step name in reference | Fix `{{ steps.name.result }}` |
+| "Task not found" | Wrong task name in reference | Fix `{{ task_name }}` reference |
 | "Agent requires prompt" | No question provided | Add question to command |
 | "SQL syntax error" | Invalid SQL | Test with --dry-run |
 
@@ -203,7 +219,7 @@ sql: SELECT * FROM {{ steps.previous_step.result }}
 - ✅ Multi-step data pipeline
 - ✅ ETL operations
 - ✅ Orchestrating multiple queries
-- ✅ Results depend on previous steps
+- ✅ Results depend on previous tasks
 
 ### Use Agents When:
 - ✅ AI reasoning required
