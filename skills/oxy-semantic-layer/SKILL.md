@@ -342,13 +342,22 @@ Create one topic per view to organize by business domain.
 ### Step 5: Validate
 
 ```bash
+# Validate all YAML configs (agents, workflows, apps, semantic layer)
+oxy validate
+
+# Or validate a single file
+oxy validate --file=semantics/views/my_view.view.yml
+
+# Build/compile the full semantic layer
 oxy build
 ```
 
-This compiles semantic layer to Cube.js and validates:
-- YAML syntax
-- Entity/dimension/measure references
+Always run `oxy validate` after creating or editing YAML files. This catches attribute errors early (e.g., unknown fields, missing required fields).
+
+`oxy build` then validates the full semantic layer including:
+- Entity/dimension/measure references across views
 - SQL expression syntax
+- Topic-to-view relationships
 
 ### Step 6: Test
 

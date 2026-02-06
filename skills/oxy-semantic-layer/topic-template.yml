@@ -14,34 +14,29 @@ views:
 # default_filters:
 #   # Equals filter
 #   - field: table_name.column_name
-#     filter_type:
-#       eq:
-#         value: "active"
+#     eq:
+#       value: "active"
 #
 #   # Not equals filter
 #   - field: table_name.status
-#     filter_type:
-#       neq:
-#         value: "deleted"
+#     neq:
+#       value: "deleted"
 #
 #   # In array filter (exclude multiple values)
 #   - field: table_name.status
-#     filter_type:
-#       not_in:
-#         values: ["cancelled", "test", "archived"]
+#     not_in:
+#       values: ["cancelled", "test", "archived"]
 #
 #   # Greater than or equal filter
 #   - field: table_name.amount
-#     filter_type:
-#       gte:
-#         value: 0
+#     gte:
+#       value: 0
 #
 #   # Date range filter
 #   - field: table_name.created_date
-#     filter_type:
-#       in_date_range:
-#         from: "90 days ago"
-#         to: "now"
+#     in_date_range:
+#       from: "90 days ago"
+#       to: "now"
 
 # Available operators:
 # - eq: equals (value: "x")

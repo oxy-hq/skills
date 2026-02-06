@@ -54,7 +54,7 @@ Claude automatically activates this skill when you:
 ### Topic Files
 
 - Organize views by business domain
-- Apply default filters (with correct `filter_type` syntax)
+- Apply default filters (operators at same level as `field`)
 - Configure base views
 
 ### Validation
@@ -86,9 +86,8 @@ filters:
 ```yaml
 default_filters:
   - field: table.column
-    filter_type:
-      operator:
-        value: "value"
+    eq:                    # operator name as key: eq, neq, gt, gte, lt, lte, in, not_in, in_date_range
+      value: "active"
 ```
 
 ## Documentation

@@ -94,15 +94,17 @@ When you ask to create an app, Claude will:
 ## Quick Commands
 
 ```bash
-# Run an app
-oxy run my_dashboard.app.yml
-
 # Validate an app
-oxy validate my_dashboard.app.yml
+oxy validate
+
+# Validate a single app file
+oxy validate --file=my_dashboard.app.yml
 
 # List existing apps
 find . -name "*.app.yml"
 ```
+
+Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxy run`.
 
 ## Key Concepts
 

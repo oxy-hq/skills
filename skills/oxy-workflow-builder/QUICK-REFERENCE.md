@@ -26,7 +26,8 @@ oxy run workflow.workflow.yml        # Execute workflow
 oxy run agent.agent.yml "question"   # Run with prompt
 
 # Validation
-oxy validate                         # Validate agents/workflows
+oxy validate --file=<path>           # Validate individual YAML file
+oxy validate                         # Validate all YAML configs (agents, workflows, apps)
 oxy build                            # Validate semantic layer
 
 # Discovery
@@ -101,7 +102,7 @@ description: "What this agent analyzes"
 
 model: "claude-3-5-sonnet-20241022"
 
-system_prompt: |
+system_instructions: |
   You are a [domain] expert. Your role:
   - Analyze data
   - Identify patterns
@@ -162,7 +163,7 @@ sql_query: SELECT * FROM {{ previous_task_name }}
 ## Validation Workflow
 
 1. Write file
-2. Run `oxy validate`
+2. Run `oxy validate --file=<path>` to validate the individual file
 3. For SQL: `oxy run file.sql --dry-run`
 4. Fix any errors
 5. Run for real

@@ -6,10 +6,13 @@
 # 1. Generate database schemas
 oxy sync
 
-# 2. Validate semantic layer
+# 2. Validate all YAML configs
+oxy validate
+
+# 3. Build/compile full semantic layer
 oxy build
 
-# 3. Start semantic engine
+# 4. Start semantic engine
 oxy semantic-engine --dev-mode
 ```
 
@@ -118,32 +121,30 @@ oxy semantic-engine --dev-mode
 default_filters:
   # Single value
   - field: table.column
-    filter_type:
-      eq:
-        value: "active"
+    eq:
+      value: "active"
 
   # Array values
   - field: table.status
-    filter_type:
-      not_in:
-        values: ["cancelled", "test"]
+    not_in:
+      values: ["cancelled", "test"]
 
   # Date range
   - field: table.date
-    filter_type:
-      in_date_range:
-        from: "90 days ago"
-        to: "now"
+    in_date_range:
+      from: "90 days ago"
+      to: "now"
 ```
 
 ## Validation Workflow
 
 1. Create/edit view files
 2. Create/edit topic files
-3. Run `oxy build`
-4. Fix any errors
-5. Test with `oxy semantic-engine --dev-mode`
-6. Query using natural language
+3. Run `oxy validate` to validate all YAML configs
+4. Run `oxy build` to build/compile the full semantic layer
+5. Fix any errors
+6. Test with `oxy semantic-engine --dev-mode`
+7. Query using natural language
 
 ## Common Errors
 

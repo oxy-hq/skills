@@ -12,7 +12,7 @@ description: "Brief description of what this agent analyzes and what questions i
 model: "claude-3-5-sonnet-20241022"
 
 # System prompt defines the agent's expertise and behavior
-system_prompt: |
+system_instructions: |
   You are a data analyst specializing in [DOMAIN - e.g., customer behavior, sales trends, operational efficiency].
 
   Your role is to:

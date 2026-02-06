@@ -66,7 +66,7 @@ Output reference: `workflow_task.inner_task_name`
     - field: view_name.field
       op: eq                  # eq | neq | gt | gte | lt | lte | in
       value: "value"
-  order:                      # Optional
+  orders:                     # Optional
     - field: view_name.field
       direction: asc          # asc | desc
 ```
@@ -126,11 +126,6 @@ With title:
   x_axis_label: "Label"       # Optional
   y_axis_label: "Label"       # Optional
   series: column_name         # Optional: group into multiple lines
-```
-
-Alternative for series (some examples use `color`):
-```yaml
-  color: column_name          # Same as series
 ```
 
 ### bar_chart
@@ -360,7 +355,7 @@ tasks:
     measures:
       - sales.total_revenue
       - sales.order_count
-    order:
+    orders:
       - field: sales.total_revenue
         direction: desc
 
@@ -371,7 +366,7 @@ tasks:
       - time.month
     measures:
       - sales.total_revenue
-    order:
+    orders:
       - field: time.month
         direction: asc
 
@@ -435,6 +430,13 @@ Use: `x: sales__region`, `y: sales__revenue`
 
 ## Validation Checklist
 
+Run validation first:
+```bash
+oxy validate
+```
+
+Then verify:
+- [ ] `oxy validate` passes with no errors
 - [ ] `name` is snake_case (if provided)
 - [ ] All task `name` fields are unique
 - [ ] All task `name` fields are snake_case

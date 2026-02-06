@@ -103,7 +103,7 @@ Does semantic layer have the data?
 
 ```bash
 # Validation
-oxy validate                    # Validate agents and workflows
+oxy validate                    # Validate all YAML configs (agents, workflows, apps)
 oxy build                       # Validate semantic layer
 
 # Semantic queries
@@ -293,7 +293,7 @@ description: "What this agent analyzes"
 
 model: "claude-3-5-sonnet-20241022"  # Or other supported models
 
-system_prompt: |
+system_instructions: |
   You are a data analyst specializing in [domain].
 
   Your role is to:
@@ -337,7 +337,7 @@ context:
 name: trend_analyzer
 description: "Analyzes trends and forecasts future patterns"
 
-system_prompt: |
+system_instructions: |
   You are a trend analysis expert. Given time-series data:
   1. Identify significant trends (growth, decline, seasonality)
   2. Highlight anomalies or outliers
@@ -358,7 +358,7 @@ tools:
 name: customer_insights
 description: "Analyzes customer behavior and segments"
 
-system_prompt: |
+system_instructions: |
   You are a customer analytics expert. Analyze customer data to:
   - Segment customers by behavior
   - Identify high-value customers
@@ -437,8 +437,11 @@ Based on the hierarchy:
 ### Step 4: Validate and Test
 
 ```bash
-# Validate configuration
+# Validate all YAML configs (ALWAYS run after creating/editing YAML)
 oxy validate
+
+# Or validate a single file
+oxy validate --file=my_workflow.workflow.yml
 
 # For SQL: dry-run first
 oxy run query.sql --dry-run
@@ -470,7 +473,7 @@ oxy run agent.agent.yml "Your test question"
 
 ### Testing
 
-- **Always validate first**: `oxy validate`
+- **Always validate generated YAML first**: `oxy validate` (or `oxy validate --file=<path>` for a single file)
 - **SQL files**: Use `--dry-run` before executing
 - **Test incrementally**: One step at a time for workflows
 - **Real questions**: Test agents with actual use cases
@@ -532,7 +535,7 @@ GROUP BY customer_id;
 
 name: data_explorer
 description: "Explores data to find insights"
-system_prompt: |
+system_instructions: |
   You are a data explorer. Examine the data and:
   1. Summarize key statistics
   2. Identify interesting patterns

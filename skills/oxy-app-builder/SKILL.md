@@ -85,7 +85,7 @@ Reference workflow task outputs: `workflow_name.inner_task_name`
     - field: sales.year
       op: eq
       value: 2024
-  order:
+  orders:
     - field: sales.month
       direction: asc
 ```
@@ -197,9 +197,9 @@ With title:
    - Follow conventions from examples
    - Ensure task outputs match display requirements
 
-5. **Validate**
-   - Run `oxy validate` if available
-   - Check YAML syntax
+5. **Validate** (REQUIRED)
+   - Run `oxy validate` to validate all YAML configs, or `oxy validate --file=<path>` for a single file
+   - Fix any validation errors before proceeding
    - Verify task names match display data references
 
 ## Data Reference Patterns
@@ -338,7 +338,7 @@ tasks:
       - sales.month
     measures:
       - sales.total_mrr
-    order:
+    orders:
       - field: sales.month
         direction: asc
 
@@ -401,25 +401,29 @@ Only propose broader refactoring if the user explicitly requests it.
 
 ## Validation Checklist
 
-Before finalizing:
+Before finalizing, ALWAYS run:
+```bash
+oxy validate
+```
+
+Then verify:
+- [ ] Validation passes with no errors
 - [ ] All task names are unique and snake_case
 - [ ] All display `data` fields reference valid task names
 - [ ] Chart x/y/series/name/value fields match actual output columns
-- [ ] YAML is valid (correct indentation, no tabs)
 - [ ] SQL is syntactically correct for the target database
 
 ## Commands
 
 ```bash
-# Run an app
-oxy run my_app.app.yml
-
-# Validate configuration
+# Validate all YAML configs (agents, workflows, apps)
 oxy validate
 
-# Check for YAML syntax issues
-oxy validate my_app.app.yml
+# Validate a single file
+oxy validate --file=my_app.app.yml
 ```
+
+Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxy run`. The `oxy run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
 
 ## DeepWiki Fallback
 
