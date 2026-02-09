@@ -24,15 +24,6 @@ When solving data analysis problems, ALWAYS follow this hierarchy:
 
 **Before writing SQL or agents, ALWAYS check if semantic layer views exist that can answer the question.**
 
-```bash
-# Start semantic engine
-oxy semantic-engine --dev-mode
-
-# Then query in natural language:
-"What is the total revenue by restaurant this month?"
-"Show me the top 10 customers by order count"
-```
-
 ### 2. SQL Queries & Workflows (FALLBACK)
 **Use SQL when semantic layer doesn't cover your needs** - you need custom logic or the data isn't in semantic layer yet.
 
