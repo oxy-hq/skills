@@ -1,0 +1,95 @@
+---
+description: ""
+globs: ""
+alwaysApply: true
+---
+
+# Oxy Project Conventions
+
+You are working in an Oxy data project. Oxy is a framework for building data apps with semantic layers, SQL workflows, AI agents, and interactive dashboards.
+
+## File Conventions
+
+| Pattern | Purpose |
+|---------|---------|
+| `config.yml` | Project configuration (databases, settings) |
+| `semantics.yml` | Semantic layer entry point |
+| `*.view.yml` | Semantic layer views (entities, dimensions, measures) |
+| `*.topic.yml` | Semantic layer topics (organize views by domain) |
+| `*.workflow.yml` | Multi-step data pipelines |
+| `*.agent.yml` | AI-powered analysis agents |
+| `*.app.yml` | Data app dashboards (tasks + displays) |
+| `.databases/` | Auto-generated database schemas (from `oxy sync`) |
+| `etl/` | ETL pipelines using DLT |
+
+## The Oxy Hierarchy
+
+When solving data analysis problems, follow this priority order:
+
+```
+Does the semantic layer have the data?
+├─ YES -> Use semantic queries (PREFERRED)
+└─ NO -> Is this a deterministic query/pipeline?
+    ├─ YES -> Use SQL file or Workflow
+    └─ NO -> Need AI reasoning?
+        ├─ YES -> Use an Agent
+        └─ NO -> Build semantic layer views first, then use semantic queries
+```
+
+1. **Semantic Queries** (preferred): Use when views/topics exist covering the data. Natural language, automatic joins, centrally maintained.
+2. **SQL / Workflows** (fallback): Use when data isn't in semantic layer, or you need custom logic, ETL, or parameterized queries.
+3. **AI Agents** (last resort): Use only when you need AI reasoning, exploratory analysis, or dynamic query generation.
+
+Always check if semantic layer views exist before writing SQL or agents.
+
+## CLI Commands Reference
+
+| Command | Purpose |
+|---------|---------|
+| `oxy sync` | Extract database schemas to `.databases/` |
+| `oxy sync <db-name>` | Sync a specific database |
+| `oxy validate` | Validate all YAML configs (agents, workflows, apps, semantic layer) |
+| `oxy validate --file=<path>` | Validate a single file |
+| `oxy build` | Compile semantic layer and build vector embeddings |
+| `oxy run query.sql` | Execute a SQL file |
+| `oxy run query.sql --dry-run` | Test SQL without executing |
+| `oxy run query.sql -v key=value` | Run SQL with variables |
+| `oxy run pipeline.workflow.yml` | Run a workflow |
+| `oxy run agent.agent.yml "question"` | Run an agent with a prompt |
+| `oxy test <file>` | Run evaluation tests on agent/workflow |
+| `oxy semantic-engine --dev-mode` | Start semantic engine for testing queries |
+| `oxy start` | Start the web UI for rendering apps |
+
+## Validation Loop (CRITICAL)
+
+After generating or editing ANY Oxy YAML file, ALWAYS:
+
+1. Run `oxy validate` (or `oxy validate --file=<path>` for a single file)
+2. If errors are found, fix them and re-validate until clean
+3. After modifying semantic layer files (`.view.yml`, `.topic.yml`), also run `oxy build` after validate passes
+
+Never consider a YAML file complete until validation passes.
+
+## Config Validation Behavior
+
+When validating Oxy configuration files:
+
+- **Critical issues** (block execution): YAML syntax errors, missing required fields
+- **Errors** (runtime failures): Invalid references (entity keys, view names, dimension refs)
+- **Warnings** (potential issues): Missing synonyms, unclear descriptions
+
+Common error patterns to watch for:
+- Entity keys must reference **dimension names**, not database column names
+- Views referenced in topics must exist as `*.view.yml` files
+- Measure filter expressions must use `{{dimension_name}}` syntax
+- Topic `default_filters` must reference valid dimension names
+
+## Do NOT Add yaml-language-server Schema Comments to Semantic Files
+
+Never add `# yaml-language-server: $schema=...` comments to `.view.yml` or `.topic.yml` files. Oxy does not publish JSON schemas for these file types at predictable URLs, and adding non-existent schema URLs causes IDE validation errors.
+
+Schema comments ARE appropriate for `.workflow.yml` and `.agent.yml` files:
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/workflow.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+```

@@ -1,8 +1,12 @@
-# Oxy Skills for Claude Code
+# Oxy Skills
 
-A Claude Code plugin providing intelligent assistance for building Oxy analytics projects. Includes auto-activating skills, slash commands, and autonomous agents for semantic layer development, workflow creation, and configuration validation.
+AI-powered assistance for building Oxy analytics projects. Includes skills for semantic layer development, workflow creation, ETL pipelines, and data app building.
+
+Available for **Claude Code** (plugin) and **Cursor** (project rules).
 
 ## Quick Start
+
+### Claude Code
 
 ```bash
 # Install from marketplace
@@ -12,6 +16,20 @@ A Claude Code plugin providing intelligent assistance for building Oxy analytics
 # Or use locally
 claude --plugin-dir /path/to/oxy-template
 ```
+
+### Cursor
+
+Copy the project rules into your Oxy project:
+
+```bash
+# From this repo
+./cursor/install.sh /path/to/your-oxy-project
+
+# Or manually copy
+cp cursor/rules/*.mdc /path/to/your-oxy-project/.cursor/rules/
+```
+
+See [cursor/README.md](cursor/README.md) for full setup instructions.
 
 ## Plugin Components
 
@@ -77,11 +95,17 @@ skills/
 │   ├── QUICK-REFERENCE.md
 │   └── *.yml            # Templates
 ├── oxy-workflow-builder/
-│   └── ...
+│   ├── SKILL.md         # Workflow skill instructions
+│   ├── README.md        # User documentation
+│   ├── QUICK-REFERENCE.md
+│   └── *-template.*     # SQL, workflow, agent templates
 ├── oxy-etl-builder/
 │   ├── SKILL.md         # ETL skill instructions
 │   ├── README.md        # User documentation
+│   ├── QUICK-REFERENCE.md
 │   ├── playbook-*.md    # Source-specific guides
+│   ├── etl-style-guide.md
+│   ├── warehouse-modeling.md
 │   └── templates/       # Code templates
 └── oxy-app-builder/
     ├── SKILL.md         # App builder skill instructions
@@ -91,7 +115,7 @@ skills/
     └── examples/        # Example prompts
 
 commands/
-├── validate.md          # Slash command implementations
+├── validate.md
 ├── build.md
 ├── sync.md
 └── test.md
@@ -99,12 +123,15 @@ commands/
 agents/
 └── config-validator.md  # Autonomous agent instructions
 
-examples/
-└── demo-project/        # Sample Oxy project
-    ├── config.yml
-    ├── semantics.yml
-    ├── workflows/
-    └── example_sql/
+cursor/                      # Cursor IDE support
+├── rules/
+│   ├── oxy-core.mdc         # Always-on core conventions
+│   ├── oxy-semantic-layer.mdc
+│   ├── oxy-workflow-builder.mdc
+│   ├── oxy-etl-builder.mdc
+│   └── oxy-app-builder.mdc
+├── install.sh               # Copy rules into a project
+└── README.md                # Cursor setup guide
 ```
 
 ## Development
@@ -155,15 +182,6 @@ tools: [Read, Grep, Bash]
 
 Autonomous agent behavior...
 ```
-
-## Examples
-
-See [examples/demo-project/](examples/demo-project/) for:
-
-- Sample semantic layer views
-- Multi-step workflows
-- AI agent configurations
-- Parameterized SQL queries
 
 ## Contributing
 
