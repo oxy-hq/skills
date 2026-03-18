@@ -67,6 +67,15 @@ Creates data apps (`*.app.yml`) - interactive dashboards combining tasks and vis
 - Supports plan-first workflow with user approval
 - Validates task-to-display data references
 
+**[oxy-test-drafter](skills/oxy-test-drafter/SKILL.md)**
+Bootstraps and refines `.test.yml` eval files for Oxy agents and workflows.
+
+- Scaffolds test files from a list of prompts
+- Runs `oxy test --output-json` and parses multi-run JSON traces
+- Drafts concise, evidence-based `expected` strings
+- Classifies cases as stable, flaky, ambiguous, or unsupported
+- Outputs a diagnostic summary with per-case classification
+
 ### Commands
 
 | Command         | Description                              |
@@ -107,12 +116,15 @@ skills/
 │   ├── etl-style-guide.md
 │   ├── warehouse-modeling.md
 │   └── templates/       # Code templates
-└── oxy-app-builder/
-    ├── SKILL.md         # App builder skill instructions
-    ├── README.md        # User documentation
-    ├── QUICK-REFERENCE.md
-    ├── templates/       # App templates
-    └── examples/        # Example prompts
+├── oxy-app-builder/
+│   ├── SKILL.md         # App builder skill instructions
+│   ├── README.md        # User documentation
+│   ├── QUICK-REFERENCE.md
+│   ├── templates/       # App templates
+│   └── examples/        # Example prompts
+└── oxy-test-drafter/
+    ├── SKILL.md         # Test drafter skill instructions
+    └── README.md        # User documentation
 
 commands/
 ├── validate.md

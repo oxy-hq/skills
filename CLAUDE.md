@@ -33,12 +33,15 @@ oxy-template/
 │   │   ├── README.md        # User documentation
 │   │   ├── playbook-*.md    # Source-specific guides
 │   │   └── templates/       # Code templates
-│   └── oxy-app-builder/
-│       ├── SKILL.md         # App builder skill instructions
-│       ├── README.md        # User documentation
-│       ├── QUICK-REFERENCE.md
-│       ├── templates/       # App templates
-│       └── examples/        # Example prompts
+│   ├── oxy-app-builder/
+│   │   ├── SKILL.md         # App builder skill instructions
+│   │   ├── README.md        # User documentation
+│   │   ├── QUICK-REFERENCE.md
+│   │   ├── templates/       # App templates
+│   │   └── examples/        # Example prompts
+│   └── oxy-test-drafter/
+│       ├── SKILL.md         # Test drafter skill instructions
+│       └── README.md        # User documentation
 ├── commands/                # Slash commands
 │   ├── validate.md
 │   ├── build.md
