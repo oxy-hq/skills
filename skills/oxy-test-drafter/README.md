@@ -109,7 +109,8 @@ settings:
   judge_model: openai-5-mini
 
 cases:
-  - prompt: What is the total revenue for all stores?
+  - name: total-revenue-all-stores       # recommended — enables --case targeting
+    prompt: What is the total revenue for all stores?
     expected: |
       Total revenue across all locations is approximately $6.7 billion.
     tags:
@@ -126,17 +127,22 @@ cases:
 ## CLI Reference
 
 ```bash
-# Run a test file (from repo root of target project)
+# Run a single case — faster when adding tests incrementally (from repo root)
+oxy test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
+oxy test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
+oxy test tests/analyst.sales_performance.test.yml --case 0 --output-json  # by 0-based index
+
+# Run full suite
 oxy test tests/analyst.sales_performance.test.yml --output-json
 
-# Filter by tag
+# Filter full suite by tag
 oxy test tests/analyst.sales_performance.test.yml --output-json --tag revenue
 
 # Run all test files
 oxy test --output-json
 ```
 
-Output is written to `<test-name>.results.json` in the same directory as the test file.
+Output is written to `<test-name>.results.json` in the same directory as the test file. When `--case` is used, the output contains only that case's results.
 
 ---
 

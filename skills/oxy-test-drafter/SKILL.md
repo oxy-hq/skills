@@ -42,12 +42,30 @@ Use these defaults: `runs: 3`, `concurrency: 5`, `judge_model: openai-5-mini`.
 
 ### Phase 3 — Run evidence-gathering
 
+**When filling in a single DRAFT case** (adding one new test, or resolving one placeholder), use `--case` to run only that case rather than the full suite:
+
+```bash
+cd <repo-root>
+# by name (preferred — requires name: field on the case)
+oxy test <test-file> --case <name> --output-json
+
+# by prompt string
+oxy test <test-file> --case "How many users signed up last month?" --output-json
+
+# by 0-based index
+oxy test <test-file> --case 0 --output-json
+```
+
+The output JSON contains only that case's results, making it faster to parse and less noisy.
+
+**When filling in multiple DRAFT cases at once**, run the full suite:
+
 ```bash
 cd <repo-root>
 oxy test <test-file> --output-json
 ```
 
-Run at least once and read the output JSON. Re-run if many cases failed due to transient errors (backend 400s, empty results, timeouts). Up to 3 total runs is reasonable.
+In both modes, re-run if the case failed due to transient errors (backend 400s, empty results, timeouts). Up to 3 total runs is reasonable.
 
 The output is written as `<test-name>.results.json` in the same directory as the test file.
 
@@ -132,7 +150,8 @@ settings:
   judge_model: openai-5-mini          # use openai-5-mini unless repo specifies otherwise
 
 cases:
-  - prompt: What is the total revenue for all stores?
+  - name: total-revenue-all-stores       # optional but recommended — enables --case targeting
+    prompt: What is the total revenue for all stores?
     expected: |
       DRAFT: expected answer to be synthesized from repeated runs and trace inspection.
     tags:
@@ -140,6 +159,8 @@ cases:
       - stores
     tool: ""    # include if a tool hint is relevant; leave empty string otherwise
 ```
+
+**Add `name:` to every case you scaffold.** It enables targeted single-case runs via `--case` and makes the diagnostic output easier to read.
 
 **File naming**: `<agent-stem>.<category>.test.yml`
 e.g. `analyst.sales_performance.test.yml`
@@ -208,11 +229,19 @@ The answer must include: location A at $73.3M, location B at $275M, location C a
 ## CLI Reference
 
 ```bash
-# Run a test file and write structured JSON results
-# Output: <test-name>.results.json in the same directory as the test file
+# Run a single case by name (preferred for incremental drafting)
+oxy test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
+
+# Run a single case by prompt string
+oxy test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
+
+# Run a single case by 0-based index
+oxy test tests/analyst.sales_performance.test.yml --case 0 --output-json
+
+# Run full suite
 oxy test tests/analyst.sales_performance.test.yml --output-json
 
-# Filter by tag
+# Filter full suite by tag
 oxy test tests/analyst.sales_performance.test.yml --output-json --tag revenue
 
 # Run all test files in the repo
