@@ -69,6 +69,26 @@ In both modes, re-run if the case failed due to transient errors (backend 400s, 
 
 The output is written as `<test-name>.results.json` in the same directory as the test file.
 
+**Reading the results file — use Read and Grep, never Python or Bash:**
+
+- **`--case` run** (single case): the file is small. Read it directly in full.
+  ```
+  Read <test-name>.results.json
+  ```
+
+- **Full suite run** (multiple cases): the file can be large. Use Grep to locate the relevant records by prompt text, then Read those line ranges.
+  ```
+  # Find line numbers for a specific prompt
+  Grep "prompt text keywords" in <results-file> (output_mode: content, -n, -C 5)
+
+  # Then Read the surrounding lines
+  Read <results-file> (offset: <line>, limit: 30)
+  ```
+
+  To read all `actual_output` values for a set of cases, locate each record's prompt line with Grep, then Read the surrounding block (the `actual_output` field follows within a few lines).
+
+Do **not** use Python or Bash to parse the JSON. The Read and Grep tools are sufficient and require no shell approval.
+
 **Detecting partial failures:**
 - A case can "succeed" (no top-level error) but have empty `actual_output` — this is a data availability failure, not success.
 - A case where `actual_output` contains a ranked list but all metric columns are null/empty is a failing attempt, not a stable answer.
@@ -296,6 +316,7 @@ Always run from the **repo root** of the target project.
 - Convert a clearly wrong agent answer into `expected` just because it was observed
 - Silently accept null/empty metric results as "the answer"
 - Fabricate expected values when evidence is insufficient — use a DRAFT note instead
+- Use Python or Bash to parse results JSON — always use the Read and Grep tools directly
 
 **Strong preferences:**
 - Intersection of stable facts across attempts > any single run
