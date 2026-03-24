@@ -1,7 +1,7 @@
 {
   "name": "oxy-skills",
-  "version": "1.3.0",
-  "description": "Complete Oxy toolkit for Claude Code and Cursor: build semantic layers, create workflows, ETL pipelines, data apps, and validate configurations",
+  "version": "1.4.0",
+  "description": "Complete Oxy toolkit for Claude Code and Cursor: build semantic layers, create workflows, ETL pipelines, data apps, draft eval tests, and validate configurations",
   "author": {
     "name": "Oxy Team",
     "url": "https://oxy.tech"
@@ -22,6 +22,9 @@
     "etl",
     "dlt",
     "data-apps",
-    "dashboards"
+    "dashboards",
+    "testing",
+    "evals",
+    "test-drafter"
   ]
 }
