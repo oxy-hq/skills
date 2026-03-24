@@ -15,11 +15,16 @@ Validate all Oxy configuration files in the current project to catch errors befo
 
 ## What to Validate
 
-Check all of these file types:
-1. **config.yml** - Project configuration
-2. **Agent files** - All `.agent.yml` files
-3. **Workflow files** - All `.workflow.yml` files
-4. **Semantic layer** - All `.view.yml` and `.topic.yml` files
+`oxy validate` checks these file types:
+1. **Agent files** - All `.agent.yml` files
+2. **Workflow files** - All `.workflow.yml` and `.procedure.yml` files
+3. **App files** - All `.app.yml` files
+
+**Note:** `oxy validate` does NOT process semantic layer files (`.view.yml`, `.topic.yml`).
+Use `oxy build` to validate and compile the semantic layer.
+
+**Note:** `config.yml` is validated automatically when any oxy command loads the
+configuration — you do not need to run a separate validate step for it.
 
 ## Steps
 
@@ -55,16 +60,17 @@ When validation passes, show a clear success message like:
 ✅ Oxy validation passed!
 
 Validated:
-- config.yml
 - X agent files
 - Y workflow files
-- Z semantic layer files (if applicable)
+- Z app files
 
 Your Oxy project is ready to run.
+Note: To validate the semantic layer, run `oxy build`.
 ```
 
 ## Notes
 
 - Always run from the project root directory (where config.yml is located)
 - This command doesn't modify any files, it only checks them
-- Run this before `/oxy:build` or `/oxy:test` to catch errors early
+- Run this before `/oxy:test` to catch workflow/agent/app errors early
+- For semantic layer errors, use `/oxy:build` instead

@@ -207,13 +207,29 @@ tasks:
       SELECT * FROM {{ step_2 }}
 ```
 
+### ⚠️ Critical Field Names
+
+These are the exact field names oxy requires. Using wrong names causes runtime errors
+(`Unknown task type`, etc.). Note: `oxy validate` checks YAML syntax only — field name
+errors will not necessarily be caught until you actually run the workflow.
+
+| Correct | Do NOT use |
+|---------|------------|
+| `type: execute_sql` | `type: sql`, `type: execute` |
+| `sql_query:` | `query:`, `sql:` |
+| `variables:` (for parameters) | `parameters:`, `params:` |
+| `database:` inside each task | `database:` at the workflow root level |
+
+Also note: `--dry-run` is only functional for standalone SQL files, not workflow files.
+To verify a workflow, run it: `oxy run workflow.yml`.
+
 ### Workflow Best Practices
 
 1. **Name tasks descriptively** - clear purpose for each task
 2. **Add descriptions** - explain what each task accomplishes
 3. **Reference previous task outputs** - `{{ task_name }}`
 4. **Keep workflows focused** - single pipeline per file
-5. **Test incrementally** - validate each task's SQL separately first
+5. **Run after creation** - `oxy run workflow.yml` to verify field names are correct
 6. **Document dependencies** - note what data/tables are required
 
 ### Common Workflow Patterns
@@ -295,9 +311,16 @@ system_instructions: |
   Be concise and focus on business impact.
 
 tools:
-  - type: database
+  - type: execute_sql
     database: clickhouse
-    description: "Access to transactional database"
+
+  # Retrieval tool: indexes SQL/workflow files for semantic search
+  # The agent can find relevant query patterns when answering questions
+  - type: retrieval
+    src:
+      - example_sql/*.sql
+      - workflows/*.workflow.yml
+    key_var: OPENAI_API_KEY   # env var for the embedding model API key
 
   - type: python
     description: "For calculations and data manipulation"

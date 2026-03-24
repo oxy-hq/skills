@@ -19,10 +19,11 @@ Compile the semantic layer definitions into Cube.js schema and build vector embe
    - Run `oxy --version` to verify Oxy CLI is installed
    - If not found, inform the user they need to install Oxy first
 
-2. **Run validation first**
-   - Execute `oxy validate` to check all configuration files
-   - If validation fails, show errors and STOP (don't proceed with build)
-   - If validation passes, continue to build
+2. **Check for semantic layer files**
+   - Verify that `semantics/views/` and `semantics/topics/` directories exist and have files
+   - If missing, inform the user they need to create view and topic files first
+   - Note: `oxy validate` does NOT validate semantic layer files — `oxy build` is the
+     correct command for this
 
 ## Build Process
 

@@ -342,19 +342,19 @@ Create one topic per view to organize by business domain.
 ### Step 5: Validate
 
 ```bash
-# Validate all YAML configs (agents, workflows, apps, semantic layer)
-oxy validate
-
-# Or validate a single file
-oxy validate --file=semantics/views/my_view.view.yml
-
-# Build/compile the full semantic layer
+# Build and validate the semantic layer (view and topic files)
 oxy build
 ```
 
-Always run `oxy validate` after creating or editing YAML files. This catches attribute errors early (e.g., unknown fields, missing required fields).
+Always run `oxy build` after creating or editing view or topic files. This is the correct
+validation command for the semantic layer — it processes `.view.yml` and `.topic.yml` files,
+compiles them, and reports errors.
 
-`oxy build` then validates the full semantic layer including:
+**Do NOT use `oxy validate` on view or topic files.** `oxy validate` is for workflow, agent,
+and app files only. Running it on view/topic files will not catch errors and may report
+misleading results.
+
+`oxy build` validates:
 - Entity/dimension/measure references across views
 - SQL expression syntax
 - Topic-to-view relationships
