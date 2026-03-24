@@ -450,24 +450,23 @@ Based on the hierarchy:
 
 ### Step 4: Validate and Test
 
+**This is a mandatory final step — do not consider the task complete until both commands pass.**
+
 ```bash
-# Validate all YAML configs (ALWAYS run after creating/editing YAML)
-oxy validate
-
-# Or validate a single file
+# 1. Validate YAML syntax on every created file (catches structural errors)
 oxy validate --file=my_workflow.workflow.yml
+oxy validate --file=my_agent.agent.yml
 
-# For SQL: dry-run first
+# 2. Run the workflow to confirm field names are correct at runtime
+#    WARNING: --dry-run is silently ignored for workflow files.
+#    Only actual execution catches wrong field names (e.g. type: sql vs type: execute_sql).
+oxy run my_workflow.workflow.yml
+
+# For SQL files only, dry-run works:
 oxy run query.sql --dry-run
 
-# Then run for real
-oxy run query.sql -v param=value
-
-# For workflows: run and monitor
-oxy run workflow.workflow.yml
-
-# For agents: test with real questions
-oxy run agent.agent.yml "Your test question"
+# For agents: test with a real question
+oxy run my_agent.agent.yml "Your test question"
 ```
 
 ## Quality Guidelines

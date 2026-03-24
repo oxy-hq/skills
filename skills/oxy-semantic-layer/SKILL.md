@@ -11,7 +11,7 @@ You are an expert at building Oxy semantic layer files. Your role is to analyze 
 
 When building semantic layers, follow this process:
 
-1. **Analyze schemas**: Read `.databases/` directory to understand table structures
+1. **Analyze schemas**: Read `semantics.yml` (produced by `oxy sync`) to discover tables and columns. If `.databases/` exists, read that instead.
 2. **Create views**: Build `semantics/views/*.view.yml` files with entities, dimensions, and measures
 3. **Create topics**: Build `semantics/topics/*.topic.yml` files to organize views
 4. **Validate**: Run `oxy build` to check syntax and compilation
@@ -309,7 +309,11 @@ Filters use a nested structure with the operator as a key:
 oxy sync
 ```
 
-This reads database connections from `config.yml` and generates schema files in `.databases/`.
+This reads database connections from `config.yml` and writes schema/dimension data to
+`semantics.yml` in the project root. Read this file to discover table names and columns.
+
+> **Note**: Older oxy versions wrote to `.databases/` instead. If `.databases/` exists,
+> read it. Otherwise read `semantics.yml`.
 
 ### Step 2: Analyze Schemas
 
@@ -342,13 +346,18 @@ Create one topic per view to organize by business domain.
 ### Step 5: Validate
 
 ```bash
-# Build and validate the semantic layer (view and topic files)
+# oxy build requires a running PostgreSQL instance.
+# If OXY_DATABASE_URL is not already set, start it first:
+oxy start  # starts Docker-based PostgreSQL on localhost:15432
+export OXY_DATABASE_URL=postgresql://postgres:postgres@localhost:15432/oxy
+
+# Then build and validate the semantic layer
 oxy build
 ```
 
-Always run `oxy build` after creating or editing view or topic files. This is the correct
-validation command for the semantic layer — it processes `.view.yml` and `.topic.yml` files,
-compiles them, and reports errors.
+Always run `oxy build` after creating or editing view or topic files — **this is a mandatory
+final step, do not consider the task complete until it passes.** It processes `.view.yml` and
+`.topic.yml` files, compiles them, and reports errors.
 
 **Do NOT use `oxy validate` on view or topic files.** `oxy validate` is for workflow, agent,
 and app files only. Running it on view/topic files will not catch errors and may report
