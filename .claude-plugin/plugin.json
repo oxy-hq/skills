@@ -27,6 +27,7 @@
     "evals",
     "test-drafter",
     "repair",
-    "diagnostics"
+    "diagnostics",
+    "skill-improvement"
   ]
 }
