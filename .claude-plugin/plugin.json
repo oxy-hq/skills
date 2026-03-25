@@ -1,6 +1,6 @@
 {
   "name": "oxy-skills",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Complete Oxy toolkit for Claude Code and Cursor: build semantic layers, create workflows, ETL pipelines, data apps, draft eval tests, diagnose and repair failures, and validate configurations",
   "author": {
     "name": "Oxy Team",
@@ -28,6 +28,8 @@
     "test-drafter",
     "repair",
     "diagnostics",
-    "skill-improvement"
+    "skill-improvement",
+    "build-instance",
+    "setup"
   ]
 }
