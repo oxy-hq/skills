@@ -193,18 +193,16 @@ tasks:
     type: execute_sql
     database: my_database
     sql_query: |
+      -- To combine results from step_1, inline the logic as a CTE:
+      WITH step_1_data AS (
+        SELECT * FROM source_table
+        WHERE condition = true
+      )
       SELECT
         column1,
         SUM(column2) as total
-      FROM {{ step_1 }}
+      FROM step_1_data
       GROUP BY column1
-
-  - name: step_3
-    type: execute_sql
-    database: my_database
-    sql_query: |
-      INSERT INTO destination_table
-      SELECT * FROM {{ step_2 }}
 ```
 
 ### ⚠️ Critical Field Names
@@ -227,7 +225,7 @@ To verify a workflow, run it: `oxy run workflow.yml`.
 
 1. **Name tasks descriptively** - clear purpose for each task
 2. **Add descriptions** - explain what each task accomplishes
-3. **Reference previous task outputs** - `{{ task_name }}`
+3. **Chain multi-step logic with CTEs** - inline dependent SQL within a single task rather than referencing prior task outputs in SQL
 4. **Keep workflows focused** - single pipeline per file
 5. **Run after creation** - `oxy run workflow.yml` to verify field names are correct
 6. **Document dependencies** - note what data/tables are required
@@ -341,6 +339,11 @@ context:
 4. **Pre-load context** - provide relevant data upfront when possible
 5. **Test with real questions** - validate with actual use cases
 6. **Document expected questions** - add examples in description
+7. **Inspect column types before writing system instructions** - read `semantics.yml` to check
+   actual column types for date/numeric fields before documenting query patterns in the agent's
+   `system_instructions`. Date columns in particular may be stored as non-date types and require
+   casting (e.g. `toDate(parseDateTimeBestEffort(toString(col)))`). Document the correct cast
+   per table in the system instructions so the agent generates valid SQL.
 
 ### Common Agent Patterns
 
@@ -453,6 +456,10 @@ Based on the hierarchy:
 **This is a mandatory final step — do not consider the task complete until both commands pass.**
 
 ```bash
+# Each Bash call is a fresh shell — OXY_DATABASE_URL must be inlined on every oxy command.
+# Read it from .env if present, otherwise fall back to the default local URL:
+DB_URL=$(grep OXY_DATABASE_URL .env 2>/dev/null | cut -d= -f2- || echo "postgresql://postgres:postgres@localhost:15432/oxy")
+
 # 1. Validate YAML syntax on every created file (catches structural errors)
 oxy validate --file=my_workflow.workflow.yml
 oxy validate --file=my_agent.agent.yml
@@ -460,13 +467,13 @@ oxy validate --file=my_agent.agent.yml
 # 2. Run the workflow to confirm field names are correct at runtime
 #    WARNING: --dry-run is silently ignored for workflow files.
 #    Only actual execution catches wrong field names (e.g. type: sql vs type: execute_sql).
-oxy run my_workflow.workflow.yml
+OXY_DATABASE_URL=$DB_URL oxy run my_workflow.workflow.yml
 
 # For SQL files only, dry-run works:
 oxy run query.sql --dry-run
 
 # For agents: test with a real question
-oxy run my_agent.agent.yml "Your test question"
+OXY_DATABASE_URL=$DB_URL oxy run my_agent.agent.yml "Your test question"
 ```
 
 ## Quality Guidelines

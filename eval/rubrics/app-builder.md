@@ -29,6 +29,7 @@ These items mean `oxy validate` will fail or the app will error when run.
 - [ ] **Q3** Skill consulted available semantic layer and workflows before choosing task types.
 - [ ] **Q4** At least one task uses `semantic_query` type if a relevant semantic layer topic exists.
 - [ ] **Q5** SQL references real table/column names from `.databases/` (no hallucinated names).
+- [ ] **Q5a** Referenced workflows and agents were run with `oxy run` before the app was finalized, to catch SQL errors that only surface at render time (not caught by `oxy validate`).
 - [ ] **Q6** `display:` items have meaningful `title:` fields.
 - [ ] **Q7** Skill ran `oxy validate` after creating the file.
 

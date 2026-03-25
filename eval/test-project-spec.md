@@ -43,7 +43,7 @@ oxy sync
 #    Option A — oxy >= 0.5.27 (no extra env var needed)
 #    Option B — set postgres URL:
 export OXY_DATABASE_URL=postgresql://postgres:postgres@localhost:15432/oxy
-oxy start  # starts local postgres
+oxy start --enterprise  # starts local postgres
 
 # 5. Launch Claude Code with the skills plugin
 claude --plugin-dir /path/to/skills

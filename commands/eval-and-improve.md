@@ -38,8 +38,8 @@ Before starting, verify:
    Run `oxy sync` if `semantics.yml` is missing or stale.
 
 4. **oxy build requires a running PostgreSQL instance.**
-   Run `oxy start` in a separate terminal before starting this eval session.
-   `oxy start` launches a Docker PostgreSQL container and the oxy web server.
+   Run `oxy start --enterprise` in a separate terminal before starting this eval session.
+   `oxy start --enterprise` launches a Docker PostgreSQL container and the oxy web server.
    It exposes PostgreSQL on port 15432 with default credentials.
    Add this to the project's `.env` so oxy can connect:
    ```

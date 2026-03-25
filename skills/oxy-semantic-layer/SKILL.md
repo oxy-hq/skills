@@ -11,7 +11,7 @@ You are an expert at building Oxy semantic layer files. Your role is to analyze 
 
 When building semantic layers, follow this process:
 
-1. **Analyze schemas**: Read `semantics.yml` (produced by `oxy sync`) to discover tables and columns. If `.databases/` exists, read that instead.
+1. **Analyze schemas**: Read `semantics.yml` (produced by `oxy sync`) to discover tables and columns. If `.databases/` exists, read that instead. **Do not consult git history to recover previous view or topic files — always build fresh from the schema source.**
 2. **Create views**: Build `semantics/views/*.view.yml` files with entities, dimensions, and measures
 3. **Create topics**: Build `semantics/topics/*.topic.yml` files to organize views
 4. **Validate**: Run `oxy build` to check syntax and compilation
@@ -347,12 +347,14 @@ Create one topic per view to organize by business domain.
 
 ```bash
 # oxy build requires a running PostgreSQL instance.
-# If OXY_DATABASE_URL is not already set, start it first:
-oxy start  # starts Docker-based PostgreSQL on localhost:15432
-export OXY_DATABASE_URL=postgresql://postgres:postgres@localhost:15432/oxy
+# Before running, verify PostgreSQL is reachable:
+DB_URL=$(grep OXY_DATABASE_URL .env 2>/dev/null | cut -d= -f2- || echo "postgresql://postgres:postgres@localhost:15432/oxy")
+DB_HOST=$(echo $DB_URL | sed 's|.*@\([^:]*\):\([0-9]*\).*|\1|')
+DB_PORT=$(echo $DB_URL | sed 's|.*@[^:]*:\([0-9]*\).*|\1|')
+nc -z $DB_HOST $DB_PORT 2>/dev/null && echo "PostgreSQL reachable" || echo "ERROR: PostgreSQL not reachable at $DB_HOST:$DB_PORT — run 'oxy start --enterprise' in a separate terminal first"
 
-# Then build and validate the semantic layer
-oxy build
+# Each Bash call is a fresh shell — inline OXY_DATABASE_URL on the oxy command:
+OXY_DATABASE_URL=$DB_URL oxy build
 ```
 
 Always run `oxy build` after creating or editing view or topic files — **this is a mandatory
