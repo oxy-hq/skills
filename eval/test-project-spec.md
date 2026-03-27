@@ -93,8 +93,10 @@ Then create:
 
 ### Skill 3: oxy-etl-builder
 
-Adapt the provider/endpoint for the specific client being tested:
+Choose the prompt variant that matches the client's data source. Use the API variant for clients
+with a known API connector; use the spreadsheet variant when testing file-based ingestion.
 
+**Variant A — API connector:**
 ```
 Create an ETL pipeline to extract [entity] data from the [Provider] API.
 Endpoint: [endpoint path]. Auth: [env var name]. Set up incremental loading by [date field].
@@ -104,6 +106,18 @@ Endpoint: [endpoint path]. Auth: [env var name]. Set up incremental loading by [
 |--------|----------|----------|--------------|
 | pokehouse-oxy | Toast POS | `/restaurants/v1/restaurantInfo` | `TOAST_API_KEY` |
 | hubspot-oxy | HubSpot | `/crm/v3/objects/contacts` | `HUBSPOT_ACCESS_TOKEN` |
+
+**Variant B — Spreadsheet ingestion:**
+```
+Create an ETL pipeline to load [entity] data from a spreadsheet into the warehouse.
+The file is at [file path].
+```
+
+Use Variant B to test that the skill asks for a file path when one is not provided:
+```
+Create an ETL pipeline to load data from a spreadsheet into the warehouse.
+```
+(No file path given — the skill should ask before proceeding.)
 
 ### Skill 4: oxy-app-builder
 

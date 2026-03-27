@@ -128,12 +128,26 @@ Then create:
    retrieval tool that indexes SQL files in example_sql/ and workflows/.
 ```
 
-**oxy-etl-builder prompt** (adapt provider/endpoint for the client being tested):
+**oxy-etl-builder prompt** — choose the variant that matches the client or what you want to test:
+
+Variant A (API connector — adapt for the client):
 ```
 Create an ETL pipeline to extract [entity] data from the [Provider] API.
 Endpoint: [endpoint path]. Auth: [env var name]. Set up incremental loading by [date field].
 ```
-See `<plugin-dir>/eval/test-project-spec.md` for client-specific values to fill in.
+
+Variant B (spreadsheet — use to test file-based ingestion):
+```
+Create an ETL pipeline to load [entity] data from a spreadsheet into the warehouse.
+The file is at [file path].
+```
+
+Variant B (no path — use to verify the skill asks before proceeding):
+```
+Create an ETL pipeline to load data from a spreadsheet into the warehouse.
+```
+
+See `<plugin-dir>/eval/test-project-spec.md` for client-specific values.
 
 **oxy-app-builder prompt** (run after semantic layer and workflow exist):
 ```
@@ -147,7 +161,7 @@ then create an app called 'executive_overview' showing:
 Trigger the skill by phrasing the prompt to match its activation description:
 - Semantic layer: "Look at the tables in .databases/ and create a semantic layer..."
 - Workflow builder: "Build a data workflow and analyst agent..."
-- ETL builder: "Create an ETL pipeline to extract data from..."
+- ETL builder: "Create an ETL pipeline to extract data from..." or "...load data from a spreadsheet..."
 - App builder: "Build an executive dashboard app..."
 
 Wait for the skill to complete all file generation and validation steps.
