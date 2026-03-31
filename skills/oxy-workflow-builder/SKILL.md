@@ -83,10 +83,11 @@ Use this decision tree when the user asks for data analysis:
 ```
 Does semantic layer have the data?
 ├─ YES → Use semantic queries (#1)
+│         For agents: use semantic_query tool type
 └─ NO → Is this a deterministic query/pipeline?
     ├─ YES → Use SQL/Workflow (#2)
     └─ NO → Need AI reasoning?
-        ├─ YES → Use Agent (#3)
+        ├─ YES → Use Agent with execute_sql (#3)
         └─ NO → Build semantic layer views first, then use semantic queries
 ```
 
@@ -288,7 +289,46 @@ tasks:
 
 ## Agent File Structure
 
-Agents use AI for analysis requiring reasoning:
+**CRITICAL: If a semantic layer exists, agents MUST use `semantic_query` tools instead
+of `execute_sql`.** Check for `semantics/views/*.view.yml` before choosing a tool type.
+Using `execute_sql` when a semantic layer exists bypasses the hierarchy and produces
+brittle text-to-SQL agents that duplicate logic already defined in the semantic layer.
+
+### Semantic Query Agent (PREFERRED — use when semantic layer exists)
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
+name: my_analyst
+description: "Answers questions about [domain] using the semantic layer"
+
+model: openai  # references model name from config.yml
+
+system_instructions: |
+  You are a data analyst specializing in [domain].
+  Query the semantic layer to answer questions. The semantic layer handles
+  joins and aggregations — you do not need to write SQL.
+
+tools:
+  - type: semantic_query
+    name: query_[topic_name]            # e.g. query_sales_mrr
+    description: "Query [topic] data"   # used by the LLM to select this tool
+    topic: [topic_name]                 # must match a *.topic.yml name exactly
+    dry_run_limit: 100                  # optional: cap rows during testing
+
+  # Add one semantic_query tool per topic the agent needs
+  # - type: semantic_query
+  #   name: query_[other_topic]
+  #   topic: [other_topic]
+
+  - type: retrieval
+    src:
+      - example_sql/*.sql
+      - workflows/*.workflow.yml
+    key_var: OPENAI_API_KEY
+```
+
+### Text-to-SQL Agent (FALLBACK — use only when NO semantic layer exists)
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
@@ -296,7 +336,7 @@ Agents use AI for analysis requiring reasoning:
 name: my_agent
 description: "What this agent analyzes"
 
-model: "claude-3-5-sonnet-20241022"  # Or other supported models
+model: openai
 
 system_instructions: |
   You are a data analyst specializing in [domain].
@@ -312,13 +352,11 @@ tools:
   - type: execute_sql
     database: clickhouse
 
-  # Retrieval tool: indexes SQL/workflow files for semantic search
-  # The agent can find relevant query patterns when answering questions
   - type: retrieval
     src:
       - example_sql/*.sql
       - workflows/*.workflow.yml
-    key_var: OPENAI_API_KEY   # env var for the embedding model API key
+    key_var: OPENAI_API_KEY
 
   - type: python
     description: "For calculations and data manipulation"

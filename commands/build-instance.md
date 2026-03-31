@@ -134,19 +134,50 @@ echo 'export OPENAI_API_KEY=sk-...' >> ~/.zshrc && source ~/.zshrc
 
 Do not proceed until an OpenAI key is confirmed present.
 
-### 1d. Run oxy sync
+### 1d. Schema discovery (conditional — oxy sync)
 
+First, check whether view files already exist:
+```bash
+find semantics/views -name "*.view.yml" 2>/dev/null | wc -l
+```
+
+**If view files exist (count > 0):** Skip sync entirely. The semantic layer skill will
+read the existing views directly. Proceed to Step 1e.
+
+**If no view files exist (from-scratch build):** Run `oxy sync` to discover the schema —
+but only after verifying the database has schema config in `config.yml`.
+
+Check config.yml for a `schemas` (ClickHouse) or `datasets` (Snowflake) key under the
+database entry. If missing, sync will connect but return 0 dimensions.
+
+- **ClickHouse** needs `schemas` with table prefix patterns, e.g.:
+  ```yaml
+  schemas:
+    your_schema_name:
+      - "your_schema_name___*"
+  ```
+- **Snowflake** needs `datasets` with schema names, e.g.:
+  ```yaml
+  datasets:
+    YOUR_SCHEMA_NAME:
+      - "*"
+  ```
+
+If the schema config is present, run sync:
 ```bash
 oxy sync
 ```
 
-Verify `semantics.yml` was created and is non-empty:
+Verify `semantics.yml` is non-empty:
 ```bash
 wc -l semantics.yml
 ```
 
-If `semantics.yml` is empty (0 dimensions), the database credentials are likely wrong.
-Stop and help the user fix the connection before proceeding.
+If `semantics.yml` is empty (0 dimensions) after sync, stop and help the user fix
+the connection or schema config before continuing. If sync cannot be resolved,
+discover the schema manually: run `SHOW SCHEMAS IN DATABASE <db>;` (Snowflake) or
+`SHOW TABLES FROM <schema>;` (ClickHouse) via a direct DB connection, then use that
+output to inform the semantic layer build in Step 2.
 
 ### 1e. Start PostgreSQL for oxy build
 
@@ -171,8 +202,9 @@ Note: env vars don't persist between shell invocations in Claude Code, so prefix
 
 ## Step 2: Semantic Layer
 
-Build the semantic layer for this project. Cover all tables in `semantics.yml`. Create
-one view file and one topic file per table.
+Build the semantic layer for this project. Create one view file and one topic file per
+table. The skill will read `semantics.yml` if it was produced by sync, or fall back to
+reading existing view files or using schema information gathered in Step 1d.
 
 _(The oxy-semantic-layer skill will activate and guide this step.)_
 
