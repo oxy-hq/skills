@@ -166,11 +166,11 @@ Trigger the skill by phrasing the prompt to match its activation description:
 
 Wait for the skill to complete all file generation and validation steps.
 
-### Step B: Invoke oxy-skill-evaluator
+### Step B: Invoke oxy-instance-skill-evaluator
 
 Say: "Evaluate the [skill name] output against its rubric."
 
-The `oxy-skill-evaluator` skill will activate, read the rubric, inspect the files, run
+The `oxy-instance-skill-evaluator` skill will activate, read the rubric, inspect the files, run
 verification commands, and score each rubric item.
 
 ### Step C: Review and Apply Fixes

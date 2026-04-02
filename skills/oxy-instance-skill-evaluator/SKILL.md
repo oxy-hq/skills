@@ -1,11 +1,11 @@
 ---
-name: oxy-skill-evaluator
-description: Evaluate the output of an oxy skill run against a rubric and propose specific improvements to the skill's SKILL.md. Use when the user asks to evaluate a skill, score skill output, or improve a skill based on test results.
+name: oxy-instance-skill-evaluator
+description: Evaluate the output of one of the 4 oxy instance-building skills (semantic-layer, workflow-builder, etl-builder, app-builder) against a rubric and propose specific improvements to the skill's SKILL.md. Use when the user asks to evaluate a skill, score skill output, or improve a skill based on test results.
 ---
 
-# Oxy Skill Evaluator
+# Oxy Instance Skill Evaluator
 
-You evaluate the output of one of the 4 oxy skills against its rubric and propose specific,
+You evaluate the output of one of the 4 oxy instance-building skills against its rubric and propose specific,
 actionable edits to the skill's `SKILL.md` file.
 
 ## When You Activate
