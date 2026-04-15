@@ -432,11 +432,11 @@ Use: `x: sales__region`, `y: sales__revenue`
 
 Run validation first:
 ```bash
-oxy validate
+oxygen validate
 ```
 
 Then verify:
-- [ ] `oxy validate` passes with no errors
+- [ ] `oxygen validate` passes with no errors
 - [ ] `name` is snake_case (if provided)
 - [ ] All task `name` fields are unique
 - [ ] All task `name` fields are snake_case

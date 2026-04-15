@@ -104,7 +104,7 @@ oxy validate --file=my_dashboard.app.yml
 find . -name "*.app.yml"
 ```
 
-Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxy run`.
+Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxygen run`.
 
 ## Key Concepts
 

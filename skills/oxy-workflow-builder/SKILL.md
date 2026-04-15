@@ -45,16 +45,16 @@ When solving data analysis problems, ALWAYS follow this hierarchy:
 
 ```bash
 # Run SQL query
-oxy run query.sql
+oxygen run query.sql
 
 # Run with parameters
-oxy run query.sql -v year=2024 -v month=12
+oxygen run query.sql -v year=2024 -v month=12
 
 # Dry run to test
-oxy run query.sql --dry-run
+oxygen run query.sql --dry-run
 
 # Run workflow
-oxy run pipeline.workflow.yml
+oxygen run pipeline.workflow.yml
 ```
 
 ### 3. AI Agents (LAST RESORT)
@@ -73,7 +73,7 @@ oxy run pipeline.workflow.yml
 
 ```bash
 # Run agent with a question
-oxy run analysis.agent.yml "What are the trends in customer behavior?"
+oxygen run analysis.agent.yml "What are the trends in customer behavior?"
 ```
 
 ## Decision Tree
@@ -94,22 +94,22 @@ Does semantic layer have the data?
 
 ```bash
 # Validation
-oxy validate                    # Validate all YAML configs (agents, workflows, apps)
-oxy build                       # Validate semantic layer
+oxygen validate                    # Validate all YAML configs (agents, workflows, apps)
+oxygen build                       # Validate semantic layer
 
 # Semantic queries
-oxy semantic-engine --dev-mode  # Start semantic engine for queries
+oxygen semantic-engine --dev-mode  # Start semantic engine for queries
 
 # SQL execution
-oxy run query.sql               # Run SQL file
-oxy run query.sql --dry-run     # Test without executing
-oxy run query.sql -v key=value  # Run with variables
+oxygen run query.sql               # Run SQL file
+oxygen run query.sql --dry-run     # Test without executing
+oxygen run query.sql -v key=value  # Run with variables
 
 # Workflows
-oxy run pipeline.workflow.yml   # Run workflow
+oxygen run pipeline.workflow.yml   # Run workflow
 
 # Agents
-oxy run agent.agent.yml "question"  # Run agent with prompt
+oxygen run agent.agent.yml "question"  # Run agent with prompt
 
 # Discovery
 find . -name "*.sql" -not -path "*/.*"
@@ -145,7 +145,7 @@ ORDER BY total_amount DESC;
 1. **Add header comments** with description and required variables
 2. **Use Jinja2 variables** for parameterization: `{{ variable_name }}`
 3. **Reference databases** via context: `{{ databases.db_name.schema }}.table`
-4. **Test with dry-run** before executing: `oxy run query.sql --dry-run`
+4. **Test with dry-run** before executing: `oxygen run query.sql --dry-run`
 5. **Keep queries focused** - one clear purpose per file
 6. **Name descriptively** - `monthly_revenue_by_restaurant.sql` not `query1.sql`
 
@@ -374,7 +374,7 @@ tools:
    find semantics/topics -name "*.topic.yml"
 
    # If views exist, use semantic queries!
-   oxy semantic-engine --dev-mode
+   oxygen semantic-engine --dev-mode
    ```
 
 2. **If semantic layer insufficient**:
@@ -429,22 +429,22 @@ Based on the hierarchy:
 
 ```bash
 # Validate all YAML configs (ALWAYS run after creating/editing YAML)
-oxy validate
+oxygen validate
 
 # Or validate a single file
-oxy validate --file=my_workflow.workflow.yml
+oxygen validate --file=my_workflow.workflow.yml
 
 # For SQL: dry-run first
-oxy run query.sql --dry-run
+oxygen run query.sql --dry-run
 
 # Then run for real
-oxy run query.sql -v param=value
+oxygen run query.sql -v param=value
 
 # For workflows: run and monitor
-oxy run workflow.workflow.yml
+oxygen run workflow.workflow.yml
 
 # For agents: test with real questions
-oxy run agent.agent.yml "Your test question"
+oxygen run agent.agent.yml "Your test question"
 ```
 
 ## Quality Guidelines
@@ -464,7 +464,7 @@ oxy run agent.agent.yml "Your test question"
 
 ### Testing
 
-- **Always validate generated YAML first**: `oxy validate` (or `oxy validate --file=<path>` for a single file)
+- **Always validate generated YAML first**: `oxygen validate` (or `oxygen validate --file=<path>` for a single file)
 - **SQL files**: Use `--dry-run` before executing
 - **Test incrementally**: One step at a time for workflows
 - **Real questions**: Test agents with actual use cases
@@ -480,7 +480,7 @@ oxy run agent.agent.yml "Your test question"
 ### Reporting (Use Semantic Queries!)
 If views exist, use semantic engine:
 ```bash
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 # Then query: "Show me total revenue by month this year"
 ```
 
@@ -567,7 +567,7 @@ tools:
 
 **Error: Agent requires prompt**
 - Cause: No question provided
-- Fix: Add question: `oxy run agent.agent.yml "Your question"`
+- Fix: Add question: `oxygen run agent.agent.yml "Your question"`
 
 **Error: Tool not available**
 - Cause: Referenced tool not configured

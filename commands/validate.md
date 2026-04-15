@@ -1,7 +1,7 @@
 ---
-name: oxy:validate
-description: Validate all Oxy configuration files (config.yml, agents, workflows, semantic layer)
-activeForm: Validating Oxy configuration
+name: oxygen:validate
+description: Validate all Oxygen configuration files (config.yml, agents, workflows, semantic layer)
+activeForm: Validating Oxygen configuration
 argument-hint: ""
 allowed-tools:
   - Bash
@@ -9,9 +9,9 @@ allowed-tools:
   - Write
 ---
 
-# Validate Oxy Configuration
+# Validate Oxygen Configuration
 
-Validate all Oxy configuration files in the current project to catch errors before running workflows or agents.
+Validate all Oxygen configuration files in the current project to catch errors before running workflows or agents.
 
 ## What to Validate
 
@@ -23,12 +23,12 @@ Check all of these file types:
 
 ## Steps
 
-1. **Check for Oxy installation**
-   - Run `oxy --version` to verify Oxy CLI is installed
-   - If not found, inform the user they need to install Oxy first
+1. **Check for Oxygen installation**
+   - Run `oxygen --version` to verify Oxygen CLI is installed
+   - If not found, inform the user they need to install Oxygen first
 
 2. **Run validation**
-   - Execute `oxy validate` command
+   - Execute `oxygen validate` command
    - This validates config.yml, all agent files, and all workflow files
 
 3. **Report results**
@@ -52,7 +52,7 @@ Common validation errors and how to help:
 When validation passes, show a clear success message like:
 
 ```
-✅ Oxy validation passed!
+✅ Oxygen validation passed!
 
 Validated:
 - config.yml
@@ -60,11 +60,11 @@ Validated:
 - Y workflow files
 - Z semantic layer files (if applicable)
 
-Your Oxy project is ready to run.
+Your Oxygen project is ready to run.
 ```
 
 ## Notes
 
 - Always run from the project root directory (where config.yml is located)
 - This command doesn't modify any files, it only checks them
-- Run this before `/oxy:build` or `/oxy:test` to catch errors early
+- Run this before `/oxygen:build` or `/oxygen:test` to catch errors early

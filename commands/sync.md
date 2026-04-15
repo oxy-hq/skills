@@ -1,5 +1,5 @@
 ---
-name: oxy:sync
+name: oxygen:sync
 description: Sync database metadata and schemas from configured databases
 activeForm: Syncing database metadata
 argument-hint: "[database-name]"
@@ -16,9 +16,9 @@ Extract and synchronize metadata, schemas, and table structures from your config
 
 ## Pre-Sync Steps
 
-1. **Check for Oxy installation**
-   - Run `oxy --version` to verify Oxy CLI is installed
-   - If not found, inform the user they need to install Oxy first
+1. **Check for Oxygen installation**
+   - Run `oxygen --version` to verify Oxygen CLI is installed
+   - If not found, inform the user they need to install Oxygen first
 
 2. **Read configuration**
    - Read `config.yml` to find configured databases
@@ -35,13 +35,13 @@ Extract and synchronize metadata, schemas, and table structures from your config
    - Allow single selection (recommend one database at a time for clarity)
 
 2. **Handle selection**
-   - If user selects specific database: `oxy sync <database-name>`
-   - If user selects "All databases": `oxy sync` (without database argument)
+   - If user selects specific database: `oxygen sync <database-name>`
+   - If user selects "All databases": `oxygen sync` (without database argument)
 
 ## Sync Process
 
 1. **Execute sync command**
-   - Run the appropriate `oxy sync` command based on selection
+   - Run the appropriate `oxygen sync` command based on selection
    - Show progress output to user
 
 2. **Monitor completion**
@@ -65,7 +65,7 @@ When sync completes successfully:
 2. **Show next steps**
    - Suggest: "Schema files are now available in .databases/ directory"
    - Suggest: "You can now create semantic layer views based on these schemas"
-   - Suggest: "Run /oxy:build to compile your semantic layer"
+   - Suggest: "Run /oxygen:build to compile your semantic layer"
 
 ## Error Handling
 

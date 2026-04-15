@@ -6,11 +6,11 @@ Diagnose and fix failing or flaky Oxy test cases by repairing the semantic layer
 
 The **oxy-repair** skill takes a failing test case, finds the root cause, and makes targeted fixes so the agent produces the correct answer reliably. It:
 
-1. Runs `oxy test <file> --case <name> --output-json` to reproduce the failure
+1. Runs `oxygen test <file> --case <name> --output-json` to reproduce the failure
 2. Inspects the results JSON — `actual_output`, `expected`, `references` (tool calls), and judge reasoning
 3. Classifies the root cause (missing dimension, insufficient measure, vague instructions, judge noise, etc.)
 4. Makes the smallest semantic layer or agent instruction fix that addresses the root cause
-5. Rebuilds with `oxy build` and reruns the test across multiple rounds to confirm stability
+5. Rebuilds with `oxygen build` and reruns the test across multiple rounds to confirm stability
 6. Reports what changed, why, and the validation results
 
 **The expected answer is the source of truth.** This skill repairs the system to match the expected answer — it never rewrites the expected answer to match current behavior.

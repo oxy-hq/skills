@@ -1,7 +1,7 @@
 ---
-name: oxy:test
+name: oxygen:test
 description: Run evaluation tests on agent or workflow files
-activeForm: Testing Oxy agents/workflows
+activeForm: Testing Oxygen agents/workflows
 argument-hint: "[file-path]"
 allowed-tools:
   - Bash
@@ -11,15 +11,15 @@ allowed-tools:
   - Write
 ---
 
-# Test Oxy Agents and Workflows
+# Test Oxygen Agents and Workflows
 
 Run evaluation tests defined in agent or workflow configuration files to validate reliability and output quality.
 
 ## Pre-Test Steps
 
-1. **Check for Oxy installation**
-   - Run `oxy --version` to verify Oxy CLI is installed
-   - If not found, inform the user they need to install Oxy first
+1. **Check for Oxygen installation**
+   - Run `oxygen --version` to verify Oxygen CLI is installed
+   - If not found, inform the user they need to install Oxygen first
 
 2. **Determine test file**
    - If command invoked with argument (file path), use that file
@@ -38,7 +38,7 @@ If no file specified:
 ## Test Execution
 
 1. **Run tests**
-   - Execute `oxy test <file-path>` with default options
+   - Execute `oxygen test <file-path>` with default options
    - Use pretty format for readable output
    - Show test progress to user
 
@@ -91,7 +91,7 @@ The command uses these defaults (recommended for most cases):
 - Threshold mode: Average (overall accuracy)
 - Min accuracy: Not enforced (show results regardless)
 
-For advanced testing options, users can run `oxy test` directly in terminal.
+For advanced testing options, users can run `oxygen test` directly in terminal.
 
 ## Notes
 

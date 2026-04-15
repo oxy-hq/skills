@@ -12,8 +12,8 @@ The agent should validate YAML syntax, check entity key references, verify dimen
 </example>
 
 <example>
-Context: User is getting validation errors when running oxy build.
-user: "I'm getting an error 'Entity key order_id not found in dimensions' when I run oxy build"
+Context: User is getting validation errors when running oxygen build.
+user: "I'm getting an error 'Entity key order_id not found in dimensions' when I run oxygen build"
 assistant: "Let me use the config-validator agent to analyze your semantic layer files and identify the issue."
 <commentary>
 The agent should identify entity/dimension mismatches, check that entity keys reference dimension names (not columns), and suggest the fix.

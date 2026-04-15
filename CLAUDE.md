@@ -85,7 +85,7 @@ The skill-development skill will:
 Use the command-development skill to create slash commands:
 
 ```text
-"Create a /oxy:deploy command that deploys the semantic layer
+"Create a /oxygen:deploy command that deploys the semantic layer
 to production"
 ```
 
@@ -210,7 +210,7 @@ When you make changes to skills, commands, or agents:
 - The task is a single, straightforward operation
 - You're wrapping an existing CLI tool
 - No decision-making is needed
-- Example: `/oxy:build` - just runs `oxy build`
+- Example: `/oxygen:build` - just runs `oxygen build`
 
 **Use Agents when:**
 
@@ -306,10 +306,10 @@ When modifying skills or documentation, understand these Oxy concepts:
 Commands should wrap Oxy CLI operations:
 
 ```bash
-oxy sync          # Extract database schemas
-oxy build         # Compile semantic layer
-oxy validate      # Check configuration
-oxy run           # Execute workflows
+oxygen sync          # Extract database schemas
+oxygen build         # Compile semantic layer
+oxygen validate      # Check configuration
+oxygen run           # Execute workflows
 ```
 
 ### File Conventions

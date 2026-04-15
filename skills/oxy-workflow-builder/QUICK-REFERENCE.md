@@ -12,23 +12,23 @@
 # Check semantic layer first (always!)
 find semantics/views -name "*.view.yml"
 find semantics/topics -name "*.topic.yml"
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 
 # SQL queries
-oxy run query.sql                    # Execute SQL
-oxy run query.sql --dry-run          # Test without executing
-oxy run query.sql -v key=value       # With variables
+oxygen run query.sql                    # Execute SQL
+oxygen run query.sql --dry-run          # Test without executing
+oxygen run query.sql -v key=value       # With variables
 
 # Workflows
-oxy run workflow.workflow.yml        # Execute workflow
+oxygen run workflow.workflow.yml        # Execute workflow
 
 # Agents
-oxy run agent.agent.yml "question"   # Run with prompt
+oxygen run agent.agent.yml "question"   # Run with prompt
 
 # Validation
-oxy validate --file=<path>           # Validate individual YAML file
-oxy validate                         # Validate all YAML configs (agents, workflows, apps)
-oxy build                            # Validate semantic layer
+oxygen validate --file=<path>           # Validate individual YAML file
+oxygen validate                         # Validate all YAML configs (agents, workflows, apps)
+oxygen build                            # Validate semantic layer
 
 # Discovery
 find . -name "*.sql" -not -path "*/.*"
@@ -163,8 +163,8 @@ sql_query: SELECT * FROM {{ previous_task_name }}
 ## Validation Workflow
 
 1. Write file
-2. Run `oxy validate --file=<path>` to validate the individual file
-3. For SQL: `oxy run file.sql --dry-run`
+2. Run `oxygen validate --file=<path>` to validate the individual file
+3. For SQL: `oxygen run file.sql --dry-run`
 4. Fix any errors
 5. Run for real
 6. Verify results
@@ -236,7 +236,7 @@ sql_query: SELECT * FROM {{ previous_task_name }}
 find semantics/views -name "*.view.yml"
 
 # 2. If views exist, use semantic queries!
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 
 # 3. Only use SQL/workflows/agents if semantic layer insufficient
 ```

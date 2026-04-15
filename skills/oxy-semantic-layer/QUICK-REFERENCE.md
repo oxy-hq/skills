@@ -4,16 +4,16 @@
 
 ```bash
 # 1. Generate database schemas
-oxy sync
+oxygen sync
 
 # 2. Validate all YAML configs
-oxy validate
+oxygen validate
 
 # 3. Build/compile full semantic layer
-oxy build
+oxygen build
 
 # 4. Start semantic engine
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 ```
 
 ## File Locations
@@ -140,10 +140,10 @@ default_filters:
 
 1. Create/edit view files
 2. Create/edit topic files
-3. Run `oxy validate` to validate all YAML configs
-4. Run `oxy build` to build/compile the full semantic layer
+3. Run `oxygen validate` to validate all YAML configs
+4. Run `oxygen build` to build/compile the full semantic layer
 5. Fix any errors
-6. Test with `oxy semantic-engine --dev-mode`
+6. Test with `oxygen semantic-engine --dev-mode`
 7. Query using natural language
 
 ## Common Errors
