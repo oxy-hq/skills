@@ -1,0 +1,76 @@
+# Pokehouse Restaurant Analytics — Build Benchmark
+#
+# Tests how well a builder can construct a complete analytics agent for a
+# restaurant chain ClickHouse database from scratch.
+#
+# Reference instance: pokehouse-oxy (ClickHouse, 12 views, 9 topics, 1 agent)
+# Existing test files used for question inspiration (NOT as ground truth):
+#   pokehouse-oxy/oxy/tests/restaurant_analyst.operations.test.yml
+#   pokehouse-oxy/oxy/tests/restaurant_analyst.sales_performance.test.yml
+
+name: "Pokehouse Restaurant Analytics"
+description: >
+  Build a complete analytics agent for a multi-location restaurant chain.
+  The ClickHouse database tracks daily sales, labor hours, online orders,
+  menu item breakdowns, store info, and employee time entries.
+
+database: clickhouse
+connection_env: CLICKHOUSE_URL   # host+port encoded as http://host:port
+
+build_prompt: |
+  Build a complete analytics agent for our restaurant chain ClickHouse database.
+
+  The database (schema: restaurant_analytics) tracks:
+  - Daily sales broken down by store, dining option (dine in, take out, online), and date
+  - Labor hours and costs per employee per day
+  - Individual orders with dining option, check total, and number of guests
+  - Order line items (menu selections) with item names and quantities
+  - Restaurant/store metadata (name, city, location code)
+  - Employee and job information
+  - Online revenue from delivery platforms
+
+  Build:
+  1. A semantic layer (views + topics) covering all major business concepts
+  2. A data analyst agent that can answer natural-language questions using semantic queries
+  3. Any supporting workflows needed
+
+  The agent must be able to answer questions about sales performance, labor efficiency,
+  menu popularity, and store comparisons across locations and time periods.
+
+builders:
+  - name: build-instance
+    invoke: command
+    ref: skills/commands/build-instance.md
+
+  - name: build-agent
+    invoke: manual
+    # invoke: api
+    # endpoint: http://localhost:8080/runs
+    # domain: builder
+
+required_artifacts:
+  - type: topic     # at least one *.topic.yml
+  - type: agent     # at least one *.agent.yml
+  - type: view      # at least one *.view.yml
+
+required_semantics:
+  # Must be able to query revenue/sales metrics
+  - topic_contains: sales
+    must_have_measures:
+      - net_sales   # or total_net_sales, revenue — any of these
+  # Must be able to query labor metrics
+  - topic_contains: labor
+    must_have_measures:
+      - labor_cost  # or total_hours, total_labor — any
+  # Must be able to query order/menu data
+  - topic_contains: order
+    must_have_measures:
+      - total_orders
+
+# eval_cases: intentionally absent — the framework auto-generates them from the
+# raw database schema at runtime (see SKILL.md Step 1b). This makes the benchmark
+# independent of any reference instance or pre-written test files.
+#
+# eval_cases.sql in this directory contains reference SQL queries that were
+# used to validate the schema during spec authoring. They are NOT used as
+# ground truth — they are reference material only.

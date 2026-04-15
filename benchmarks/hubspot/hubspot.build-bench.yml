@@ -1,0 +1,66 @@
+# HubSpot SaaS MRR — Build Benchmark
+#
+# Tests how well a builder can construct a complete analytics agent for a
+# SaaS company's HubSpot CRM + MRR Snowflake database from scratch.
+#
+# Reference instance: hubspot-oxy (Snowflake, 4 views, 2 topics, 1 agent)
+# Existing test file used for question inspiration (NOT as ground truth):
+#   hubspot-oxy/sales_analyst.test.yml
+
+name: "HubSpot SaaS Sales Analytics"
+description: >
+  Build a complete analytics agent for a SaaS company's Snowflake database
+  containing HubSpot CRM deals and MRR/MBR reporting data.
+
+database: snowflake
+connection_env: SNOWFLAKE_CONNECTION   # encoded as account:user:password:warehouse:database:role
+
+build_prompt: |
+  Build a complete analytics agent for our SaaS company's Snowflake database.
+
+  The database (PROD_DB) contains:
+  - Monthly Recurring Revenue (MRR) data segmented by sales motion, demand source,
+    product type, and geography (North America and other regions)
+  - HubSpot CRM deals with attributes: close date, ARR, deal owner, company, stage
+  - Company-level revenue targets for the full year
+  - A sales directory mapping reps to their segments and regions
+
+  Build:
+  1. A semantic layer (views + topics) covering MRR trends, deal performance,
+     rep scorecards, and company targets
+  2. A sales analyst agent that can answer natural-language questions about
+     MRR attainment, year-over-year growth, top deals, and rep performance
+
+  Key business concepts the agent must understand:
+  - MRR (Monthly Recurring Revenue) vs ARR (Annual Recurring Revenue)
+  - Change reasons: New Business, Cross-Sell, Edition Upgrade, Churn, Contraction
+  - Sales motions: Rep Led, QL (Quote-Led), eCommerce, BDR, Partner
+  - Product types: SalesHub, ServiceHub, MarketingHub, Platform, CMSHub
+
+builders:
+  - name: build-instance
+    invoke: command
+    ref: skills/commands/build-instance.md
+
+  - name: build-agent
+    invoke: manual
+    # invoke: api
+    # endpoint: http://localhost:8080/runs
+    # domain: builder
+
+required_artifacts:
+  - type: topic
+  - type: agent
+  - type: view
+
+required_semantics:
+  - topic_contains: mrr
+    must_have_measures:
+      - mrr   # or total_mrr, monthly_recurring_revenue
+  - topic_contains: deal
+    must_have_measures:
+      - arr   # or deal_value, total_arr
+
+# eval_cases: intentionally absent — the framework auto-generates them from the
+# raw database schema at runtime (see SKILL.md Step 1b). This makes the benchmark
+# independent of any reference instance or pre-written test files.
