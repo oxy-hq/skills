@@ -14,3 +14,4 @@
 
 # Plugin settings
 .claude/*.local.md
+.claude/settings.local.json
