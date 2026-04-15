@@ -7,7 +7,7 @@ Bootstrap or refine `.test.yml` eval files for Oxy agents and workflows — even
 The **oxy-test-drafter** skill automates the tedious part of writing evals: figuring out what the right answer actually is. It:
 
 1. Scaffolds a `.test.yml` from a list of prompts (or loads an existing file)
-2. Runs `oxy test <file> --output-json` and parses the JSON traces
+2. Runs `oxygen test <file> --output-json` and parses the JSON traces
 3. Reads `actual_output` across multiple run attempts to identify stable facts
 4. Drafts concise, natural-language `expected` strings for each case
 5. Flags flaky, ambiguous, or unsupported cases with diagnostic notes
@@ -25,7 +25,7 @@ Either:
 
 Plus:
 - Path to the target agent/workflow (e.g. `analyst.agent.yml`)
-- The repo root of the target project (so `oxy test` can run correctly)
+- The repo root of the target project (so `oxygen test` can run correctly)
 
 ---
 
@@ -128,18 +128,18 @@ cases:
 
 ```bash
 # Run a single case — faster when adding tests incrementally (from repo root)
-oxy test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
-oxy test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
-oxy test tests/analyst.sales_performance.test.yml --case 0 --output-json  # by 0-based index
+oxygen test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case 0 --output-json  # by 0-based index
 
 # Run full suite
-oxy test tests/analyst.sales_performance.test.yml --output-json
+oxygen test tests/analyst.sales_performance.test.yml --output-json
 
 # Filter full suite by tag
-oxy test tests/analyst.sales_performance.test.yml --output-json --tag revenue
+oxygen test tests/analyst.sales_performance.test.yml --output-json --tag revenue
 
 # Run all test files
-oxy test --output-json
+oxygen test --output-json
 ```
 
 Output is written to `<test-name>.results.json` in the same directory as the test file. When `--case` is used, the output contains only that case's results.

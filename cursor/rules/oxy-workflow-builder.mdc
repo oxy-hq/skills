@@ -18,22 +18,22 @@ find semantics/topics -name "*.topic.yml" 2>/dev/null
 
 ```bash
 # Validation (ALWAYS run after creating/editing YAML)
-oxy validate
-oxy validate --file=<path>
+oxygen validate
+oxygen validate --file=<path>
 
 # SQL execution
-oxy run query.sql
-oxy run query.sql --dry-run
-oxy run query.sql -v key=value
+oxygen run query.sql
+oxygen run query.sql --dry-run
+oxygen run query.sql -v key=value
 
 # Workflows
-oxy run pipeline.workflow.yml
+oxygen run pipeline.workflow.yml
 
 # Agents
-oxy run agent.agent.yml "question"
+oxygen run agent.agent.yml "question"
 
 # Semantic queries (preferred when views exist)
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 ```
 
 ## SQL File Structure
@@ -62,7 +62,7 @@ ORDER BY total_amount DESC;
 1. Add header comments with description and required variables
 2. Use Jinja2 variables for parameterization: `{{ variable_name }}`
 3. Reference databases via context: `{{ databases.db_name.schema }}.table`
-4. Test with dry-run before executing: `oxy run query.sql --dry-run`
+4. Test with dry-run before executing: `oxygen run query.sql --dry-run`
 5. Keep queries focused - one clear purpose per file
 6. Name descriptively - `monthly_revenue_by_restaurant.sql` not `query1.sql`
 
@@ -304,17 +304,17 @@ tools:
 
 ```bash
 # ALWAYS run after creating/editing YAML
-oxy validate
-oxy validate --file=my_workflow.workflow.yml
+oxygen validate
+oxygen validate --file=my_workflow.workflow.yml
 
 # For SQL: dry-run first
-oxy run query.sql --dry-run
+oxygen run query.sql --dry-run
 
 # For workflows
-oxy run workflow.workflow.yml
+oxygen run workflow.workflow.yml
 
 # For agents
-oxy run agent.agent.yml "Your test question"
+oxygen run agent.agent.yml "Your test question"
 ```
 
 ## Quality Guidelines
@@ -402,5 +402,5 @@ tools:
 - **Task fails partway**: Test each task's SQL separately first
 
 ### Agent Issues
-- **Agent requires prompt**: Add question: `oxy run agent.agent.yml "Your question"`
+- **Agent requires prompt**: Add question: `oxygen run agent.agent.yml "Your question"`
 - **Tool not available**: Check database names in config.yml, verify tool types

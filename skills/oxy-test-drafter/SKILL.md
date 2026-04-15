@@ -1,6 +1,6 @@
 ---
 name: oxy-test-drafter
-description: "Use for ANY test or eval request involving an Oxy agent, workflow, or agentic workflow — 'add a test', 'create a test', 'write a test case', 'test this agent', 'run tests', 'add evals', 'evaluate my agent', 'create an evaluation', 'fill in expected answers', or 'bootstrap an eval suite'. Manages .test.yml eval files: scaffolding cases, running `oxy test --output-json`, parsing results, and drafting expected strings from observed outputs."
+description: "Use for ANY test or eval request involving an Oxy agent, workflow, or agentic workflow — 'add a test', 'create a test', 'write a test case', 'test this agent', 'run tests', 'add evals', 'evaluate my agent', 'create an evaluation', 'fill in expected answers', or 'bootstrap an eval suite'. Manages .test.yml eval files: scaffolding cases, running `oxygen test --output-json`, parsing results, and drafting expected strings from observed outputs."
 ---
 
 # Oxy Test Drafter
@@ -47,13 +47,13 @@ Use these defaults: `runs: 3`, `concurrency: 5`, `judge_model: openai-5-mini`.
 ```bash
 cd <repo-root>
 # by name (preferred — requires name: field on the case)
-oxy test <test-file> --case <name> --output-json
+oxygen test <test-file> --case <name> --output-json
 
 # by prompt string
-oxy test <test-file> --case "How many users signed up last month?" --output-json
+oxygen test <test-file> --case "How many users signed up last month?" --output-json
 
 # by 0-based index
-oxy test <test-file> --case 0 --output-json
+oxygen test <test-file> --case 0 --output-json
 ```
 
 The output JSON contains only that case's results, making it faster to parse and less noisy.
@@ -62,7 +62,7 @@ The output JSON contains only that case's results, making it faster to parse and
 
 ```bash
 cd <repo-root>
-oxy test <test-file> --output-json
+oxygen test <test-file> --output-json
 ```
 
 In both modes, re-run if the case failed due to transient errors (backend 400s, empty results, timeouts). Up to 3 total runs is reasonable.
@@ -250,22 +250,22 @@ The answer must include: location A at $73.3M, location B at $275M, location C a
 
 ```bash
 # Run a single case by name (preferred for incremental drafting)
-oxy test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
 
 # Run a single case by prompt string
-oxy test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
 
 # Run a single case by 0-based index
-oxy test tests/analyst.sales_performance.test.yml --case 0 --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case 0 --output-json
 
 # Run full suite
-oxy test tests/analyst.sales_performance.test.yml --output-json
+oxygen test tests/analyst.sales_performance.test.yml --output-json
 
 # Filter full suite by tag
-oxy test tests/analyst.sales_performance.test.yml --output-json --tag revenue
+oxygen test tests/analyst.sales_performance.test.yml --output-json --tag revenue
 
 # Run all test files in the repo
-oxy test --output-json
+oxygen test --output-json
 ```
 
 Always run from the **repo root** of the target project.

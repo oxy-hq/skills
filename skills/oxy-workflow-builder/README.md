@@ -107,22 +107,22 @@ Claude will recommend the right approach based on the hierarchy.
 ```bash
 # Check semantic layer first
 find semantics/views -name "*.view.yml"
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 
 # Run SQL query
-oxy run query.sql -v year=2024
+oxygen run query.sql -v year=2024
 
 # Test SQL without executing
-oxy run query.sql --dry-run
+oxygen run query.sql --dry-run
 
 # Run workflow
-oxy run pipeline.workflow.yml
+oxygen run pipeline.workflow.yml
 
 # Run agent with question
-oxy run agent.agent.yml "What are the trends?"
+oxygen run agent.agent.yml "What are the trends?"
 
 # Validate
-oxy validate
+oxygen validate
 ```
 
 ## Decision Tree

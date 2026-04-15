@@ -14,20 +14,20 @@ When building semantic layers, follow this process:
 1. **Analyze schemas**: Read `.databases/` directory to understand table structures
 2. **Create views**: Build `semantics/views/*.view.yml` files with entities, dimensions, and measures
 3. **Create topics**: Build `semantics/topics/*.topic.yml` files to organize views
-4. **Validate**: Run `oxy build` to check syntax and compilation
-5. **Test**: Use `oxy semantic-engine --dev-mode` to verify queries work
+4. **Validate**: Run `oxygen build` to check syntax and compilation
+5. **Test**: Use `oxygen semantic-engine --dev-mode` to verify queries work
 
 ## Essential Commands
 
 ```bash
 # Generate database schemas (run first)
-oxy sync
+oxygen sync
 
 # Validate semantic layer
-oxy build
+oxygen build
 
 # Test semantic engine
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 ```
 
 ## View File Structure
@@ -306,7 +306,7 @@ Filters use a nested structure with the operator as a key:
 ### Step 1: Generate Schemas
 
 ```bash
-oxy sync
+oxygen sync
 ```
 
 This reads database connections from `config.yml` and generates schema files in `.databases/`.
@@ -343,18 +343,18 @@ Create one topic per view to organize by business domain.
 
 ```bash
 # Validate all YAML configs (agents, workflows, apps, semantic layer)
-oxy validate
+oxygen validate
 
 # Or validate a single file
-oxy validate --file=semantics/views/my_view.view.yml
+oxygen validate --file=semantics/views/my_view.view.yml
 
 # Build/compile the full semantic layer
-oxy build
+oxygen build
 ```
 
-Always run `oxy validate` after creating or editing YAML files. This catches attribute errors early (e.g., unknown fields, missing required fields).
+Always run `oxygen validate` after creating or editing YAML files. This catches attribute errors early (e.g., unknown fields, missing required fields).
 
-`oxy build` then validates the full semantic layer including:
+`oxygen build` then validates the full semantic layer including:
 - Entity/dimension/measure references across views
 - SQL expression syntax
 - Topic-to-view relationships
@@ -362,7 +362,7 @@ Always run `oxy validate` after creating or editing YAML files. This catches att
 ### Step 6: Test
 
 ```bash
-oxy semantic-engine --dev-mode
+oxygen semantic-engine --dev-mode
 ```
 
 Test natural language queries to verify the semantic layer generates correct SQL.

@@ -64,8 +64,8 @@ tools:
 #     description: "Business context and definitions"
 
 # Usage:
-#   oxy run my_agent_name.agent.yml "What are the key trends in customer behavior this month?"
-#   oxy run my_agent_name.agent.yml "Which customer segments are most profitable?"
+#   oxygen run my_agent_name.agent.yml "What are the key trends in customer behavior this month?"
+#   oxygen run my_agent_name.agent.yml "Which customer segments are most profitable?"
 #
 # Best Practices:
 # - Clear, specific system prompt

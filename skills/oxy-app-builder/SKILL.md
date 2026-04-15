@@ -198,7 +198,7 @@ With title:
    - Ensure task outputs match display requirements
 
 5. **Validate** (REQUIRED)
-   - Run `oxy validate` to validate all YAML configs, or `oxy validate --file=<path>` for a single file
+   - Run `oxygen validate` to validate all YAML configs, or `oxygen validate --file=<path>` for a single file
    - Fix any validation errors before proceeding
    - Verify task names match display data references
 
@@ -403,7 +403,7 @@ Only propose broader refactoring if the user explicitly requests it.
 
 Before finalizing, ALWAYS run:
 ```bash
-oxy validate
+oxygen validate
 ```
 
 Then verify:
@@ -417,13 +417,13 @@ Then verify:
 
 ```bash
 # Validate all YAML configs (agents, workflows, apps)
-oxy validate
+oxygen validate
 
 # Validate a single file
-oxy validate --file=my_app.app.yml
+oxygen validate --file=my_app.app.yml
 ```
 
-Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxy run`. The `oxy run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
+Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxygen run`. The `oxygen run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
 
 ## DeepWiki Fallback
 

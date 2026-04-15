@@ -1,6 +1,6 @@
 ---
 name: oxy-repair
-description: "Use when an Oxy agent is giving wrong, incomplete, or inconsistent answers — whether the user reports failing/flaky tests, shares a specific prompt with a bad response, says 'the agent isn't answering this correctly', 'this response is wrong', 'investigate why this doesn't work', 'tests are failing', 'fix this flaky test', 'the answer should be X but the agent says Y', 'debug this eval', 'make this test pass', or generally complains that their agent's output is unreliable. Also use when the user pastes test output JSON, trace data, or a prompt+response pair and wants it diagnosed and fixed. Diagnoses failures from `oxy test --output-json` results, observability traces, or user-reported prompt/response pairs, then makes targeted repairs to semantic layer files (views/topics) and agent system instructions — never weakens the tests."
+description: "Use when an Oxy agent is giving wrong, incomplete, or inconsistent answers — whether the user reports failing/flaky tests, shares a specific prompt with a bad response, says 'the agent isn't answering this correctly', 'this response is wrong', 'investigate why this doesn't work', 'tests are failing', 'fix this flaky test', 'the answer should be X but the agent says Y', 'debug this eval', 'make this test pass', or generally complains that their agent's output is unreliable. Also use when the user pastes test output JSON, trace data, or a prompt+response pair and wants it diagnosed and fixed. Diagnoses failures from `oxygen test --output-json` results, observability traces, or user-reported prompt/response pairs, then makes targeted repairs to semantic layer files (views/topics) and agent system instructions — never weakens the tests."
 ---
 
 # Oxy Repair
@@ -39,7 +39,7 @@ Typical files the skill needs to navigate:
 semantics/views/*.view.yml    # dimensions, measures, joins, filters
 semantics/topics/*.topic.yml  # groups views into queryable semantic topics
 tests/*.test.yml              # prompts, expected answers, judge settings
-tests/*.results.json          # output from oxy test --output-json
+tests/*.results.json          # output from oxygen test --output-json
 *.agent.yml                   # system instructions and tool configuration
 config.yml                    # project configuration
 ```
@@ -59,19 +59,19 @@ Run the failing case(s) and collect evidence:
 cd <repo-root>
 
 # Single case by name (preferred)
-oxy test <test-file> --case <name> --output-json
+oxygen test <test-file> --case <name> --output-json
 
 # Single case by prompt string
-oxy test <test-file> --case "What is the total revenue?" --output-json
+oxygen test <test-file> --case "What is the total revenue?" --output-json
 
 # Single case by 0-based index
-oxy test <test-file> --case 0 --output-json
+oxygen test <test-file> --case 0 --output-json
 
 # Full suite (when multiple cases fail)
-oxy test <test-file> --output-json
+oxygen test <test-file> --output-json
 ```
 
-> **Note:** Some projects use `oxy-debug test` instead of `oxy test`. Check the project's conventions and use whichever command the repo uses. The flags (`--case`, `--output-json`, `--tag`) are the same either way.
+> **Note:** Some projects use `oxy-debug test` instead of `oxygen test`. Check the project's conventions and use whichever command the repo uses. The flags (`--case`, `--output-json`, `--tag`) are the same either way.
 
 This produces:
 - Console summary with PASS / FAIL / FLKY and pass rate
@@ -231,12 +231,12 @@ After making changes:
 **Step 1:** Rebuild the semantic layer:
 ```bash
 cd <repo-root>
-oxy build
+oxygen build
 ```
 
 **Step 2:** Rerun the failing case:
 ```bash
-oxy test <test-file> --case <name> --output-json
+oxygen test <test-file> --case <name> --output-json
 ```
 
 **Step 3:** Read the new results and evaluate.
@@ -244,7 +244,7 @@ oxy test <test-file> --case <name> --output-json
 **One passing run is suggestive, not conclusive.** Prefer at least 2–3 rounds of validation when practical. Distinguish true behavior improvements from judge noise.
 
 - If the fix doesn't fully resolve the issue: re-diagnose with the new evidence, apply an additional targeted repair, rerun. Limit to 3 repair-validate cycles before reporting findings.
-- If other cases regress: run the full suite (`oxy test <test-file> --output-json`) and adjust the repair to fix the original case without breaking others.
+- If other cases regress: run the full suite (`oxygen test <test-file> --output-json`) and adjust the repair to fix the original case without breaking others.
 
 ### Phase 6 — Report
 
@@ -423,25 +423,25 @@ dimensions:
 
 ```bash
 # Run a single case by name (preferred for targeted repair)
-oxy test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case total-revenue-all-stores --output-json
 
 # Run a single case by prompt string
-oxy test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case "What is the total revenue?" --output-json
 
 # Run a single case by 0-based index
-oxy test tests/analyst.sales_performance.test.yml --case 0 --output-json
+oxygen test tests/analyst.sales_performance.test.yml --case 0 --output-json
 
 # Run full suite (to check for regressions)
-oxy test tests/analyst.sales_performance.test.yml --output-json
+oxygen test tests/analyst.sales_performance.test.yml --output-json
 
 # Filter by tag
-oxy test tests/analyst.sales_performance.test.yml --output-json --tag revenue
+oxygen test tests/analyst.sales_performance.test.yml --output-json --tag revenue
 
 # Run all test files
-oxy test --output-json
+oxygen test --output-json
 
 # Rebuild semantic layer after making changes
-oxy build
+oxygen build
 ```
 
 Always run from the **repo root** of the target project.

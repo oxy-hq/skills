@@ -195,8 +195,8 @@ ALWAYS follow this process:
 
 5. **Validate** (REQUIRED)
    ```bash
-   oxy validate
-   oxy validate --file=<path>
+   oxygen validate
+   oxygen validate --file=<path>
    ```
 
 ## Data Reference Patterns
@@ -389,7 +389,7 @@ Only propose broader refactoring if the user explicitly requests it.
 
 Before finalizing, ALWAYS run:
 ```bash
-oxy validate
+oxygen validate
 ```
 
 Then verify:
@@ -401,4 +401,4 @@ Then verify:
 
 ## Running Apps
 
-Apps are rendered through the Oxy web UI (`oxy start`), not via `oxy run`. The `oxy run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
+Apps are rendered through the Oxy web UI (`oxygen start`), not via `oxygen run`. The `oxygen run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.

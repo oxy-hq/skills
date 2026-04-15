@@ -44,7 +44,7 @@ These rules port the full content of the Claude Code Oxy skills plugin:
 | `oxy-workflow-builder` skill | `oxy-workflow-builder.mdc` rule |
 | `oxy-etl-builder` skill | `oxy-etl-builder.mdc` rule |
 | `oxy-app-builder` skill | `oxy-app-builder.mdc` rule |
-| `/oxy:validate`, `/oxy:build`, `/oxy:sync`, `/oxy:test` commands | CLI reference in `oxy-core.mdc` |
+| `/oxygen:validate`, `/oxygen:build`, `/oxygen:sync`, `/oxygen:test` commands | CLI reference in `oxy-core.mdc` |
 | `config-validator` agent | Validation loop behavior in `oxy-core.mdc` |
 
 ## Differences from Claude Code Plugin
@@ -52,7 +52,7 @@ These rules port the full content of the Claude Code Oxy skills plugin:
 | Feature | Claude Code | Cursor |
 |---------|------------|--------|
 | Skill activation | Auto-activating skills with frontmatter | Auto-attached rules via globs |
-| Slash commands | `/oxy:validate`, `/oxy:build`, etc. | Ask the agent to run `oxy validate`, `oxy build`, etc. |
+| Slash commands | `/oxygen:validate`, `/oxygen:build`, etc. | Ask the agent to run `oxygen validate`, `oxygen build`, etc. |
 | Config validator agent | Autonomous agent triggered by file changes | Validation reminders in always-on rule |
 | ETL playbooks | Loaded as companion files | Referenced by name (check skills repo) |
 | DeepWiki fallback | Queried automatically for unknown features | Not included (rules are self-contained) |

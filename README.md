@@ -41,7 +41,7 @@ Builds semantic layer files (views and topics) for natural language analytics.
 - Analyzes database schemas from `.databases/`
 - Creates `*.view.yml` files with entities, dimensions, and measures
 - Generates `*.topic.yml` files to organize views
-- Validates with `oxy build`
+- Validates with `oxygen build`
 
 **[oxy-workflow-builder](skills/oxy-workflow-builder/SKILL.md)**
 Creates data workflows, SQL queries, and AI agents following Oxy patterns.
@@ -49,7 +49,7 @@ Creates data workflows, SQL queries, and AI agents following Oxy patterns.
 - Designs multi-step ETL pipelines
 - Generates parameterized SQL with Jinja2
 - Creates `*.workflow.yml` and `*.agent.yml` files
-- Tests with `oxy run`
+- Tests with `oxygen run`
 
 **[oxy-etl-builder](skills/oxy-etl-builder/SKILL.md)**
 Builds ETL pipelines using DLT (data-load-tools) for loading data into warehouses.
@@ -71,7 +71,7 @@ Creates data apps (`*.app.yml`) - interactive dashboards combining tasks and vis
 Bootstraps and refines `.test.yml` eval files for Oxy agents and workflows.
 
 - Scaffolds test files from a list of prompts
-- Runs `oxy test --output-json` and parses multi-run JSON traces
+- Runs `oxygen test --output-json` and parses multi-run JSON traces
 - Drafts concise, evidence-based `expected` strings
 - Classifies cases as stable, flaky, ambiguous, or unsupported
 - Outputs a diagnostic summary with per-case classification

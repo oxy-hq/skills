@@ -19,7 +19,7 @@ You are working in an Oxy data project. Oxy is a framework for building data app
 | `*.workflow.yml` | Multi-step data pipelines |
 | `*.agent.yml` | AI-powered analysis agents |
 | `*.app.yml` | Data app dashboards (tasks + displays) |
-| `.databases/` | Auto-generated database schemas (from `oxy sync`) |
+| `.databases/` | Auto-generated database schemas (from `oxygen sync`) |
 | `etl/` | ETL pipelines using DLT |
 
 ## The Oxy Hierarchy
@@ -46,27 +46,27 @@ Always check if semantic layer views exist before writing SQL or agents.
 
 | Command | Purpose |
 |---------|---------|
-| `oxy sync` | Extract database schemas to `.databases/` |
-| `oxy sync <db-name>` | Sync a specific database |
-| `oxy validate` | Validate all YAML configs (agents, workflows, apps, semantic layer) |
-| `oxy validate --file=<path>` | Validate a single file |
-| `oxy build` | Compile semantic layer and build vector embeddings |
-| `oxy run query.sql` | Execute a SQL file |
-| `oxy run query.sql --dry-run` | Test SQL without executing |
-| `oxy run query.sql -v key=value` | Run SQL with variables |
-| `oxy run pipeline.workflow.yml` | Run a workflow |
-| `oxy run agent.agent.yml "question"` | Run an agent with a prompt |
-| `oxy test <file>` | Run evaluation tests on agent/workflow |
-| `oxy semantic-engine --dev-mode` | Start semantic engine for testing queries |
-| `oxy start` | Start the web UI for rendering apps |
+| `oxygen sync` | Extract database schemas to `.databases/` |
+| `oxygen sync <db-name>` | Sync a specific database |
+| `oxygen validate` | Validate all YAML configs (agents, workflows, apps, semantic layer) |
+| `oxygen validate --file=<path>` | Validate a single file |
+| `oxygen build` | Compile semantic layer and build vector embeddings |
+| `oxygen run query.sql` | Execute a SQL file |
+| `oxygen run query.sql --dry-run` | Test SQL without executing |
+| `oxygen run query.sql -v key=value` | Run SQL with variables |
+| `oxygen run pipeline.workflow.yml` | Run a workflow |
+| `oxygen run agent.agent.yml "question"` | Run an agent with a prompt |
+| `oxygen test <file>` | Run evaluation tests on agent/workflow |
+| `oxygen semantic-engine --dev-mode` | Start semantic engine for testing queries |
+| `oxygen start` | Start the web UI for rendering apps |
 
 ## Validation Loop (CRITICAL)
 
 After generating or editing ANY Oxy YAML file, ALWAYS:
 
-1. Run `oxy validate` (or `oxy validate --file=<path>` for a single file)
+1. Run `oxygen validate` (or `oxygen validate --file=<path>` for a single file)
 2. If errors are found, fix them and re-validate until clean
-3. After modifying semantic layer files (`.view.yml`, `.topic.yml`), also run `oxy build` after validate passes
+3. After modifying semantic layer files (`.view.yml`, `.topic.yml`), also run `oxygen build` after validate passes
 
 Never consider a YAML file complete until validation passes.
 

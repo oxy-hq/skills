@@ -60,13 +60,13 @@ LIMIT {{ limit | default(100) }};
 
 /*
 Usage:
-  oxy run query_name.sql -v start_date=2024-01-01 -v end_date=2024-12-31
+  oxygen run query_name.sql -v start_date=2024-01-01 -v end_date=2024-12-31
 
 Best Practices:
   - Define all variables in the oxy front matter with types and descriptions
   - Use {{ databases.db_name.schema }}.table for table references
   - Use {{ variable_name }} for Jinja2 variable substitution
-  - Test with --dry-run before executing: oxy run query_name.sql --dry-run
+  - Test with --dry-run before executing: oxygen run query_name.sql --dry-run
   - Keep queries focused on a single purpose
   - Add enums for variables with predefined valid values
   - Set sensible defaults where appropriate

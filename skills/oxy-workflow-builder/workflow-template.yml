@@ -67,7 +67,7 @@ tasks:
       SELECT * FROM {{ aggregate_data }}
 
 # Usage:
-#   oxy run my_workflow_name.workflow.yml
+#   oxygen run my_workflow_name.workflow.yml
 #
 # Best Practices:
 # - Name tasks descriptively (extract, transform, load, aggregate, etc.)
