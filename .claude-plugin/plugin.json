@@ -30,6 +30,10 @@
     "diagnostics",
     "skill-improvement",
     "build-instance",
-    "setup"
+    "setup",
+    "build-bench",
+    "benchmark",
+    "build-evaluation",
+    "builder-comparison"
   ]
 }
