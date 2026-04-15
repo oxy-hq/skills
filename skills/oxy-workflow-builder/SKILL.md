@@ -83,10 +83,11 @@ Use this decision tree when the user asks for data analysis:
 ```
 Does semantic layer have the data?
 ├─ YES → Use semantic queries (#1)
+│         For agents: use semantic_query tool type
 └─ NO → Is this a deterministic query/pipeline?
     ├─ YES → Use SQL/Workflow (#2)
     └─ NO → Need AI reasoning?
-        ├─ YES → Use Agent (#3)
+        ├─ YES → Use Agent with execute_sql (#3)
         └─ NO → Build semantic layer views first, then use semantic queries
 ```
 
@@ -193,27 +194,41 @@ tasks:
     type: execute_sql
     database: my_database
     sql_query: |
+      -- To combine results from step_1, inline the logic as a CTE:
+      WITH step_1_data AS (
+        SELECT * FROM source_table
+        WHERE condition = true
+      )
       SELECT
         column1,
         SUM(column2) as total
-      FROM {{ step_1 }}
+      FROM step_1_data
       GROUP BY column1
-
-  - name: step_3
-    type: execute_sql
-    database: my_database
-    sql_query: |
-      INSERT INTO destination_table
-      SELECT * FROM {{ step_2 }}
 ```
+
+### ⚠️ Critical Field Names
+
+These are the exact field names oxy requires. Using wrong names causes runtime errors
+(`Unknown task type`, etc.). Note: `oxy validate` checks YAML syntax only — field name
+errors will not necessarily be caught until you actually run the workflow.
+
+| Correct | Do NOT use |
+|---------|------------|
+| `type: execute_sql` | `type: sql`, `type: execute` |
+| `sql_query:` | `query:`, `sql:` |
+| `variables:` (for parameters) | `parameters:`, `params:` |
+| `database:` inside each task | `database:` at the workflow root level |
+
+Also note: `--dry-run` is only functional for standalone SQL files, not workflow files.
+To verify a workflow, run it: `oxy run workflow.yml`.
 
 ### Workflow Best Practices
 
 1. **Name tasks descriptively** - clear purpose for each task
 2. **Add descriptions** - explain what each task accomplishes
-3. **Reference previous task outputs** - `{{ task_name }}`
+3. **Chain multi-step logic with CTEs** - inline dependent SQL within a single task rather than referencing prior task outputs in SQL
 4. **Keep workflows focused** - single pipeline per file
-5. **Test incrementally** - validate each task's SQL separately first
+5. **Run after creation** - `oxy run workflow.yml` to verify field names are correct
 6. **Document dependencies** - note what data/tables are required
 
 ### Common Workflow Patterns
@@ -274,7 +289,46 @@ tasks:
 
 ## Agent File Structure
 
-Agents use AI for analysis requiring reasoning:
+**CRITICAL: If a semantic layer exists, agents MUST use `semantic_query` tools instead
+of `execute_sql`.** Check for `semantics/views/*.view.yml` before choosing a tool type.
+Using `execute_sql` when a semantic layer exists bypasses the hierarchy and produces
+brittle text-to-SQL agents that duplicate logic already defined in the semantic layer.
+
+### Semantic Query Agent (PREFERRED — use when semantic layer exists)
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
+
+name: my_analyst
+description: "Answers questions about [domain] using the semantic layer"
+
+model: openai  # references model name from config.yml
+
+system_instructions: |
+  You are a data analyst specializing in [domain].
+  Query the semantic layer to answer questions. The semantic layer handles
+  joins and aggregations — you do not need to write SQL.
+
+tools:
+  - type: semantic_query
+    name: query_[topic_name]            # e.g. query_sales_mrr
+    description: "Query [topic] data"   # used by the LLM to select this tool
+    topic: [topic_name]                 # must match a *.topic.yml name exactly
+    dry_run_limit: 100                  # optional: cap rows during testing
+
+  # Add one semantic_query tool per topic the agent needs
+  # - type: semantic_query
+  #   name: query_[other_topic]
+  #   topic: [other_topic]
+
+  - type: retrieval
+    src:
+      - example_sql/*.sql
+      - workflows/*.workflow.yml
+    key_var: OPENAI_API_KEY
+```
+
+### Text-to-SQL Agent (FALLBACK — use only when NO semantic layer exists)
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/oxy-hq/oxy/refs/heads/main/json-schemas/agent.json
@@ -282,7 +336,7 @@ Agents use AI for analysis requiring reasoning:
 name: my_agent
 description: "What this agent analyzes"
 
-model: "claude-3-5-sonnet-20241022"  # Or other supported models
+model: openai
 
 system_instructions: |
   You are a data analyst specializing in [domain].
@@ -295,9 +349,14 @@ system_instructions: |
   Be concise and focus on business impact.
 
 tools:
-  - type: database
+  - type: execute_sql
     database: clickhouse
-    description: "Access to transactional database"
+
+  - type: retrieval
+    src:
+      - example_sql/*.sql
+      - workflows/*.workflow.yml
+    key_var: OPENAI_API_KEY
 
   - type: python
     description: "For calculations and data manipulation"
@@ -318,6 +377,11 @@ context:
 4. **Pre-load context** - provide relevant data upfront when possible
 5. **Test with real questions** - validate with actual use cases
 6. **Document expected questions** - add examples in description
+7. **Inspect column types before writing system instructions** - read `semantics.yml` to check
+   actual column types for date/numeric fields before documenting query patterns in the agent's
+   `system_instructions`. Date columns in particular may be stored as non-date types and require
+   casting (e.g. `toDate(parseDateTimeBestEffort(toString(col)))`). Document the correct cast
+   per table in the system instructions so the agent generates valid SQL.
 
 ### Common Agent Patterns
 
@@ -427,24 +491,27 @@ Based on the hierarchy:
 
 ### Step 4: Validate and Test
 
+**This is a mandatory final step — do not consider the task complete until both commands pass.**
+
 ```bash
-# Validate all YAML configs (ALWAYS run after creating/editing YAML)
-oxy validate
+# Each Bash call is a fresh shell — OXY_DATABASE_URL must be inlined on every oxy command.
+# Read it from .env if present, otherwise fall back to the default local URL:
+DB_URL=$(grep OXY_DATABASE_URL .env 2>/dev/null | cut -d= -f2- || echo "postgresql://postgres:postgres@localhost:15432/oxy")
 
-# Or validate a single file
+# 1. Validate YAML syntax on every created file (catches structural errors)
 oxy validate --file=my_workflow.workflow.yml
+oxy validate --file=my_agent.agent.yml
 
-# For SQL: dry-run first
+# 2. Run the workflow to confirm field names are correct at runtime
+#    WARNING: --dry-run is silently ignored for workflow files.
+#    Only actual execution catches wrong field names (e.g. type: sql vs type: execute_sql).
+OXY_DATABASE_URL=$DB_URL oxy run my_workflow.workflow.yml
+
+# For SQL files only, dry-run works:
 oxy run query.sql --dry-run
 
-# Then run for real
-oxy run query.sql -v param=value
-
-# For workflows: run and monitor
-oxy run workflow.workflow.yml
-
-# For agents: test with real questions
-oxy run agent.agent.yml "Your test question"
+# For agents: test with a real question
+OXY_DATABASE_URL=$DB_URL oxy run my_agent.agent.yml "Your test question"
 ```
 
 ## Quality Guidelines

@@ -16,6 +16,13 @@ etl/sources/spreadsheets/
     └── <name>.py        # Concrete implementations
 ```
 
+## Step 0: Get the File Path
+
+If the user has not provided a file path, ask before proceeding:
+> "What is the path to the spreadsheet file?"
+
+Do not proceed until you have a concrete file path or URL.
+
 ## Step 1: Understand the Spreadsheet
 
 Before coding, analyze the file structure:

@@ -197,8 +197,23 @@ With title:
    - Follow conventions from examples
    - Ensure task outputs match display requirements
 
-5. **Validate** (REQUIRED)
-   - Run `oxy validate` to validate all YAML configs, or `oxy validate --file=<path>` for a single file
+5. **Pre-test referenced workflows and agents** (REQUIRED before opening the app)
+
+   `oxy validate` only checks YAML structure — SQL errors won't surface until the app runs in
+   the UI. Run any workflows and agents the app references BEFORE finalizing the app:
+
+   ```bash
+   # Test each workflow the app references
+   OXY_DATABASE_URL=postgresql://postgres:postgres@localhost:15432/oxy oxy run workflows/my_workflow.workflow.yml
+
+   # Test each agent the app references
+   OXY_DATABASE_URL=postgresql://postgres:postgres@localhost:15432/oxy oxy run my_agent.agent.yml "summarize last week"
+   ```
+
+   If either fails with a SQL error, fix the workflow or agent first, then return to the app.
+
+6. **Validate** (REQUIRED)
+   - Run `oxy validate --file=<path>` on the app file
    - Fix any validation errors before proceeding
    - Verify task names match display data references
 
@@ -423,7 +438,7 @@ oxy validate
 oxy validate --file=my_app.app.yml
 ```
 
-Note: Apps are rendered through the Oxy web UI (`oxy start`), not via `oxy run`. The `oxy run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
+Note: Apps are rendered through the Oxy web UI (`oxy start --enterprise`), not via `oxy run`. The `oxy run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
 
 ## DeepWiki Fallback
 
