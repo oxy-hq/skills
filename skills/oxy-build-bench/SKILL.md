@@ -208,34 +208,32 @@ as FAILED and skip its evaluation. Still evaluate any builders that succeeded.
 
 ---
 
-## Step 4: Write the Test File
+## Step 4: Write the Test Cases
 
-For each builder directory that completed successfully, write the appropriate test file
-before calling `oxy-bench eval`. The CLI will pass this file to `oxy test` internally.
+For each builder directory that completed successfully, add test cases before calling
+`oxy-bench eval`. The format differs by level.
 
-### Level 1 — Consistency test file
+### Level 1 — Consistency tests (embedded in the agent file)
 
-Find the agent file in the builder directory:
+Consistency tests live inside the `.agent.yml` file itself, not in a separate test file.
+Find the agent file and append a `tests:` block using the questions from Step 1b:
+
 ```bash
 find "$DIR" -name "*.agent.yml" | head -1
 ```
 
-Write `$DIR/bench_consistency.test.yml` using the questions from Step 1b:
-
+Add to the agent file:
 ```yaml
-name: "Build Bench Consistency — <benchmark name>"
-target: <agent-filename>   # relative to $DIR, e.g. "restaurant_analyst.agent.yml"
-
-settings:
-  runs: 5
-  concurrency: 3
-  judge_model: openai-5-mini
-
-cases:
-  - name: <slug>
-    type: consistency
+tests:
+  - type: consistency
+    n: 3
     task_description: "<question from Step 1b>"
   # one entry per generated question
+```
+
+Pass the **agent file** as `--test-file` when calling `oxy-bench eval`:
+```bash
+oxy-bench eval --dir "$DIR" --spec "<spec>" --test-file "$DIR/<agent>.agent.yml" ...
 ```
 
 ### Level 2 — Test case eval file
@@ -251,11 +249,10 @@ target: <agent-filename>
 settings:
   runs: 3
   concurrency: 3
-  judge_model: openai-5-mini
+  judge_model: <model-name-from-config>
 
 cases:
-  - name: <slug>
-    prompt: "<prompt>"
+  - prompt: "<prompt>"
     expected: "<expected>"   # human-verified
   # include all eval_cases that have an expected field
 ```
@@ -269,10 +266,18 @@ For each builder directory, call the CLI. It handles all hard checks (file prese
 the composite score, and returns structured JSON.
 
 ```bash
+# Level 1 — pass the agent file (consistency tests are embedded in it)
 oxy-bench eval \
   --dir "$DIR" \
   --spec "<path-to-spec.build-bench.yml>" \
-  --test-file "$DIR/bench_consistency.test.yml" \   # or bench_eval.test.yml for Level 2
+  --test-file "$DIR/<agent>.agent.yml" \
+  --format json
+
+# Level 2 — pass the separate eval test file
+oxy-bench eval \
+  --dir "$DIR" \
+  --spec "<path-to-spec.build-bench.yml>" \
+  --test-file "$DIR/bench_eval.test.yml" \
   --format json
 ```
 
