@@ -56,10 +56,10 @@ required_artifacts:
 required_semantics:
   - topic_contains: mrr
     must_have_measures:
-      - mrr   # or total_mrr, monthly_recurring_revenue
+      - total_mrr
   - topic_contains: deal
     must_have_measures:
-      - arr   # or deal_value, total_arr
+      - deal_value
 
 # eval_cases: intentionally absent — the framework auto-generates them from the
 # raw database schema at runtime (see SKILL.md Step 1b). This makes the benchmark
