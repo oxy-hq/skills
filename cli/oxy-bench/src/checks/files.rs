@@ -2,9 +2,10 @@ use crate::checks::FilePresenceResult;
 use crate::spec::ArtifactRequirement;
 use anyhow::Result;
 use std::path::Path;
+use walkdir::WalkDir;
 
 /// Check that at least one file of each required artifact type exists in the directory.
-/// Equivalent to Step 4a in the skill.
+/// Searches recursively so files in subdirectories (e.g. semantics/views/) are found.
 pub fn check(dir: &Path, required: &[ArtifactRequirement]) -> Result<FilePresenceResult> {
     let mut counts = Vec::new();
     let mut all_pass = true;
@@ -17,8 +18,10 @@ pub fn check(dir: &Path, required: &[ArtifactRequirement]) -> Result<FilePresenc
             other   => return Err(anyhow::anyhow!("Unknown artifact type: {}", other)),
         };
 
-        let count = std::fs::read_dir(dir)?
+        let count = WalkDir::new(dir)
+            .into_iter()
             .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
             .filter(|e| {
                 e.file_name()
                     .to_string_lossy()

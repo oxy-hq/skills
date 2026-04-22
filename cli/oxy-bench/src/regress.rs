@@ -12,8 +12,8 @@ pub struct RegressionResult {
 /// Run oxy test against an existing test file in an existing instance directory.
 /// No build checks — the instance is assumed to already be built and running.
 pub fn run(dir: &Path, test_file: &Path) -> Result<RegressionResult> {
-    let db_url = std::env::var("OXY_DATABASE_URL").unwrap_or_default();
-    let score = oxy_test::check(dir, test_file, &db_url)?;
+    let db_url = std::env::var("OXY_DATABASE_URL").ok();
+    let score = oxy_test::check(dir, test_file, db_url.as_deref())?;
 
     Ok(RegressionResult {
         test_file: test_file.display().to_string(),

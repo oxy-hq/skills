@@ -44,16 +44,20 @@ pub struct SmokeResult {
 /// test_file: path to the bench_consistency.test.yml or bench_eval.test.yml written by the skill.
 /// If oxy build fails, smoke and oxy test are skipped.
 pub fn run_all(dir: &Path, spec: &Spec, test_file: Option<&Path>) -> Result<CheckResults> {
-    let db_url = std::env::var(&spec.connection_env).unwrap_or_default();
+    // OXY_DATABASE_URL is the PostgreSQL URL for oxy's internal state — read it directly
+    // from the environment (it's already set by `oxy start --enterprise`).
+    // spec.connection_env holds the Snowflake creds env var, which is unrelated.
+    let db_url = std::env::var("OXY_DATABASE_URL").ok();
+    let db_url_str = db_url.as_deref().unwrap_or_default();
 
     let file_presence = files::check(dir, &spec.required_artifacts)?;
     let validate = validate::check(dir)?;
-    let build = build::check(dir, &db_url)?;
+    let build = build::check(dir, db_url_str)?;
 
     let (smoke, oxy_test_score) = if build == PassFail::Pass {
-        let smoke = Some(smoke::check(dir, &spec.required_semantics, &db_url)?);
+        let smoke = Some(smoke::check(dir, &spec.required_semantics, db_url_str)?);
         let oxy_test_score = match test_file {
-            Some(tf) => Some(oxy_test::check(dir, tf, &db_url)?),
+            Some(tf) => Some(oxy_test::check(dir, tf, db_url.as_deref())?),
             None => None,
         };
         (smoke, oxy_test_score)
