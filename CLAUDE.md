@@ -318,9 +318,11 @@ Oxy projects use these file patterns:
 
 - `*.view.yml` - Semantic layer views
 - `*.topic.yml` - Topic definitions
-- `*.workflow.yml` - Workflow definitions
-- `*.agent.yml` - AI agent configurations
+- `*.workflow.yml` / `*.procedure.yml` - Workflow / procedure definitions
+- `*.agent.yml` - Classic single-call AI agent configurations
+- `*.agentic.yml` - Multi-step FSM analytics / app-builder agents
 - `*.app.yml` - Data app definitions (dashboards)
+- `*.test.yml` / `*.aw.test.yml` - Test suites for classic / agentic agents
 - `config.yml` - Project configuration
 - `semantics.yml` - Semantic layer entry point
 - `etl/` - ETL pipeline directory (sources, runners, transforms)

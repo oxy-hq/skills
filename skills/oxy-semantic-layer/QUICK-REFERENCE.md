@@ -71,7 +71,6 @@ oxy semantic-engine --dev-mode
 | `median` | Median value | Yes |
 | `min` | Minimum value | Yes |
 | `max` | Maximum value | Yes |
-| `stddev` | Standard deviation | Yes |
 | `custom` | Custom SQL expression | Yes |
 
 ## Common Patterns
