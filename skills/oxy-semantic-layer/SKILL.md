@@ -56,7 +56,7 @@ dimensions:
 
 measures:
   - name: measure_name
-    type: sum|average|count|count_distinct|min|max|median|stddev|custom
+    type: sum|average|count|count_distinct|min|max|median|custom
     description: "What this metric represents"
     expr: column_name_or_sql_expression
     synonyms: ["alternative name"]
