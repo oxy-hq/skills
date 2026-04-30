@@ -52,7 +52,7 @@ dimensions:
     type: boolean
     description: "Whether record is active"
     expr: status = 'active'
-    samples: [true, false]
+    samples: ["true", "false"]   # samples are ALWAYS strings, even for boolean/number dimensions
 
 measures:
   # Count measures
