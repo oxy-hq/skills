@@ -124,6 +124,20 @@ dimensions:
     expr: restaurant_id
 ```
 
+### Always declare a foreign entity for every UUID/FK column
+
+Whenever a fact-style view has a UUID/FK column pointing at another view's
+primary key (e.g. `orders.restaurant_id` → `restaurants.guid`), declare a
+**`type: foreign`** entity on the fact view with the **same `name:`** as the
+lookup view's primary entity, and `key:` set to the FK dimension. This is
+what makes downstream `semantic_query` calls able to dimension on the
+human-readable name from the lookup view (e.g. `restaurants.location_name`)
+instead of the raw UUID.
+
+Without the foreign-entity declaration, dashboards built on top of the view
+can only reference the FK column directly and end up rendering opaque UUIDs
+on chart axes and table rows.
+
 ## Dimension Patterns
 
 ### Time Dimensions
@@ -182,9 +196,16 @@ dimensions:
     type: boolean
     description: "Whether date is a holiday"
     expr: is_holiday
-    samples: [true, false]
+    samples: ["true", "false"]
     synonyms: ["holiday", "holiday flag"]
 ```
+
+> **`samples` is always a list of strings**, even when the dimension `type` is
+> `boolean` or `number`. Write `samples: ["true", "false"]` and
+> `samples: ["129.99", "89.50"]`, never bare literals like `[true, false]` or
+> `[129.99, 89.50]`. Bare booleans/numbers fail YAML deserialization
+> (`invalid type: boolean \`true\`, expected a string`) and break the entire
+> semantic layer load.
 
 ## Measure Patterns
 

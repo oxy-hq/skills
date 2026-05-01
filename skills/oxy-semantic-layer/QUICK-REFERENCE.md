@@ -158,7 +158,10 @@ default_filters:
 
 1. **One topic per view** to avoid duplication
 2. **Add synonyms** for natural language queries
-3. **Include samples** for categorical dimensions
+3. **Include samples** for categorical dimensions — `samples` is always a
+   list of strings, even for `boolean` and `number` dimensions. Use
+   `samples: ["true", "false"]` and `samples: ["129.99", "89.50"]`, never
+   bare literals (they fail YAML deserialization)
 4. **Use descriptive names** (snake_case)
 5. **Write business-friendly descriptions**
 6. **Test incrementally** after each change

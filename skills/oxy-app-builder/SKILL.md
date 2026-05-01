@@ -164,6 +164,58 @@ With title:
   value: market_share          # Value column
 ```
 
+### Chart column gotchas
+
+**Time-dimension granularity suffix.** When a `semantic_query` task uses
+`time_dimensions:` with `granularity:`, the output column gets an extra
+`__<granularity>` suffix appended. Example:
+
+```yaml
+tasks:
+  - name: trend
+    type: semantic_query
+    topic: orders
+    time_dimensions:
+      - dimension: orders.created_date
+        granularity: month
+    measures: [orders.total_revenue]
+
+display:
+  - type: line_chart
+    data: trend
+    x: orders__created_date__month   # NOT orders__created_date
+    y: orders__total_revenue
+```
+
+Omitting the suffix produces a "column not found" Binder error in the
+in-browser DuckDB chart engine and the chart silently fails to render.
+
+**Never put a raw UUID/FK on a chart axis or table row label.** When the
+primary entity's `key:` is an opaque ID (`guid`, `restaurant_id`,
+`customer_id`, `order_id`, …), do NOT use that field as the chart `x:`,
+`name:`, or as the only identifier in a table — the dashboard will render
+uninformative UUIDs.
+
+Two ways to surface a human-readable label instead:
+
+1. **Preferred — `semantic_query` via foreign entity.** If a joined view
+   exposes a name dimension (e.g. `restaurants.location_name`), make sure
+   the FK side declares the joined view as a `type: foreign` entity (see
+   the semantic-layer skill), include both views in the topic, and pull
+   the name through:
+   `dimensions: [restaurants.location_name]` instead of
+   `dimensions: [orders.restaurant_id]`. Output column is then
+   `restaurants__location_name`.
+
+2. **Fallback — `execute_sql` with a JOIN.** When `semantic_query` can't
+   reach the name (no foreign entity, no multi-view topic), use
+   `execute_sql` with an explicit JOIN to the lookup table and `SELECT`
+   the name column directly.
+
+If neither path is available (no name field exists in any related view),
+fall back to the FK but warn in the markdown header that rows are keyed
+by ID — never silently render UUIDs as a chart axis.
+
 ## Workflow for Building Apps
 
 ### ALWAYS Follow This Process:

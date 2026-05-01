@@ -428,6 +428,16 @@ measures:
 ```
 Use: `x: sales__region`, `y: sales__revenue`
 
+**Time dimensions with `granularity:` add the granularity as an extra
+`__<granularity>` suffix on the output column.** A `time_dimensions` entry
+of `dimension: orders.created_date, granularity: month` produces a column
+named `orders__created_date__month` — the chart `x:` must reference it
+with the suffix or the chart fails to render with a Binder error.
+
+**Never put a raw UUID/FK column on a chart axis** (`restaurant_id`,
+`customer_id`, `guid`, …). Pull a human-readable name through a foreign
+entity (`x: restaurants__location_name`) or `execute_sql` JOIN instead.
+
 ## Validation Checklist
 
 Run validation first:
