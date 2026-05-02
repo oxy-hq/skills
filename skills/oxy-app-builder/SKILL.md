@@ -216,6 +216,88 @@ If neither path is available (no name field exists in any related view),
 fall back to the FK but warn in the markdown header that rows are keyed
 by ID — never silently render UUIDs as a chart axis.
 
+## SQL Dialect Notes
+
+When you author or profile SQL inside an `execute_sql` task — or when you
+ask the warehouse for shape/distribution stats before picking fields —
+use the right dialect for the configured database. The two most common
+divergence points across Oxy-supported warehouses:
+
+| Dialect    | `DATE_TRUNC` form                                    | Stddev fn                      |
+| ---------- | ---------------------------------------------------- | ------------------------------ |
+| BigQuery   | `DATE_TRUNC(<col>, MONTH)` (column first, no quotes) | `STDDEV(<col>)`                |
+| Snowflake  | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| Postgres   | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| DuckDB     | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| ClickHouse | `toStartOfMonth(<col>)`                              | `stddevPop(<col>)` (lowercase) |
+
+Other places dialects diverge in `.app.yml` SQL:
+
+- **Identifier quoting**: `"col"` in Postgres/Snowflake; `` `col` `` in
+  BigQuery/MySQL; bare or backticked in ClickHouse.
+- **Casting**: `CAST(x AS DATE)` is portable; `x::date` is Postgres-only.
+- **Date arithmetic**: `INTERVAL '1 day'` works in Postgres / DuckDB;
+  BigQuery uses `DATE_ADD(d, INTERVAL 1 DAY)`; ClickHouse uses
+  `addDays(d, 1)`.
+- **String concatenation**: `||` works in Postgres / DuckDB / Snowflake;
+  BigQuery requires `CONCAT(a, b)`; ClickHouse accepts both.
+
+Pick the dialect by the `database:` field on the task — that name resolves
+to a connector in `config.yml`, which determines the warehouse type.
+
+## Profiling Template
+
+Before committing to a measure or entity for a chart or ranked table,
+profile the underlying data so you don't ship a flat-line trend or a
+top-10 with one row in it. One consolidated SELECT is usually enough:
+
+```sql
+SELECT
+  COUNT(*)                                              AS rows,
+  COUNT(DISTINCT <entity_expr>)                         AS entity_card,
+  MIN(<time_expr>)                                      AS min_date,
+  MAX(<time_expr>)                                      AS max_date,
+  COUNT(DISTINCT DATE_TRUNC('month', <time_expr>))      AS month_count,
+  MIN(<measure_expr>)                                   AS min_val,
+  MAX(<measure_expr>)                                   AS max_val,
+  STDDEV(<measure_expr>)                                AS measure_stddev
+FROM <table>
+```
+
+Substitute `<entity_expr>`, `<time_expr>`, `<measure_expr>`, and `<table>`
+with the view's actual `expr:` strings — never guess column names. Apply
+the dialect substitutions from "SQL Dialect Notes" above for `DATE_TRUNC`
+and `STDDEV` when the warehouse is BigQuery or ClickHouse.
+
+A topic is fit for ranking and trend visualizations when:
+
+- `rows >= 100`,
+- `month_count >= 3` (enough time for a meaningful trend),
+- `measure_stddev > 0` (not a flat measure that draws as a horizontal
+  line at one value),
+- `entity_card` is between 5 and 500 (top/bottom-N actually differ).
+
+Topics that fail any of these criteria still belong in the project, just
+not as the focal point of a dashboard — render them as a table of values
+or skip them entirely rather than producing a chart that misleads.
+
+## Failure Recovery
+
+Profiling queries fail mid-build for routine reasons — dialect mismatch,
+type-cast errors, an aggregation function the warehouse doesn't expose.
+The recovery rule:
+
+1. **Simplify and retry once.** Drop `STDDEV`, drop `month_count`, or
+   replace `DATE_TRUNC` with the dialect's equivalent. At most two
+   attempts per topic in total.
+2. **Skip the topic on the second failure.** Never loop on the same
+   failing query. Move on to the next candidate; if none qualify, omit
+   the affected block entirely rather than ship a misleading chart.
+
+This rule applies anywhere in `.app.yml` authoring where you query the
+warehouse before committing layout decisions, not just during the
+initial scaffolding pass.
+
 ## Workflow for Building Apps
 
 ### ALWAYS Follow This Process:

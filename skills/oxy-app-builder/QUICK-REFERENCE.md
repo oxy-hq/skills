@@ -438,6 +438,41 @@ with the suffix or the chart fails to render with a Binder error.
 `customer_id`, `guid`, …). Pull a human-readable name through a foreign
 entity (`x: restaurants__location_name`) or `execute_sql` JOIN instead.
 
+## SQL Dialect Cheatsheet
+
+For `execute_sql` tasks and pre-build profiling queries, match the syntax
+to the `database:` field's warehouse type.
+
+| Dialect    | `DATE_TRUNC` form                        | Stddev fn        |
+| ---------- | ---------------------------------------- | ---------------- |
+| BigQuery   | `DATE_TRUNC(col, MONTH)` (no quotes)     | `STDDEV(col)`    |
+| Snowflake  | `DATE_TRUNC('month', col)`               | `STDDEV(col)`    |
+| Postgres   | `DATE_TRUNC('month', col)`               | `STDDEV(col)`    |
+| DuckDB     | `DATE_TRUNC('month', col)`               | `STDDEV(col)`    |
+| ClickHouse | `toStartOfMonth(col)`                    | `stddevPop(col)` |
+
+## Profiling One-Shot
+
+Before charting a measure, profile it. One consolidated SELECT:
+
+```sql
+SELECT
+  COUNT(*)                                         AS rows,
+  COUNT(DISTINCT entity_col)                       AS entity_card,
+  MIN(time_col)                                    AS min_date,
+  MAX(time_col)                                    AS max_date,
+  COUNT(DISTINCT DATE_TRUNC('month', time_col))    AS month_count,
+  STDDEV(measure_col)                              AS measure_stddev
+FROM table
+```
+
+A topic is fit for charting when `rows >= 100`, `month_count >= 3`,
+`measure_stddev > 0`, and `entity_card` is between 5 and 500.
+
+**Failure recovery:** simplify and retry once (drop `STDDEV` or
+`month_count`); skip the topic on a second failure. Never loop on the
+same failing query.
+
 ## Validation Checklist
 
 Run validation first:
