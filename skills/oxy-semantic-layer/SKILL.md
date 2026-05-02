@@ -207,6 +207,86 @@ dimensions:
 > (`invalid type: boolean \`true\`, expected a string`) and break the entire
 > semantic layer load.
 
+### Date Columns: Detect Format, Then Cast
+
+A date dimension MUST be `type: date` (or `type: datetime`) so the semantic
+layer compiles filters as date literals. The dimension's `expr:` must produce
+a real `Date` / `DateTime`, not the raw underlying column. Mismatches produce
+a `TYPE_MISMATCH` error at filter time — silent at view-creation, then trips
+the first analytics query that filters on the dimension.
+
+#### Recognition heuristic
+
+Any column whose business meaning is a date or timestamp (`*_date`, `*_at`,
+`business_date`, `order_date`, `created`, `updated`, `event_time`, …) where
+the underlying SQL type is **not already** `Date` / `DateTime` / `TIMESTAMP`
+needs a wrapping cast. Match by the column's business meaning, not its
+physical type — a column literally named `order_date` may still be stored as
+a string or integer.
+
+#### Sample first, then cast
+
+Stored formats vary across warehouses, and across tables within the same
+warehouse — ISO strings (`"2024-01-31"`), compact strings (`"20240131"`),
+date integers (`20240131`), Unix epoch seconds, milliseconds, and so on.
+Run a one-row sample to see what's actually there before deciding the cast:
+
+```sql
+SELECT order_date FROM analytics.orders LIMIT 1
+```
+
+Guessing is cheap to get wrong (silent failure at query time) and cheap to
+verify (one tool call).
+
+#### Cast functions per warehouse
+
+Combine these with the format you sampled. Set the dimension to
+`type: date` (or `datetime`); the `expr:` wraps the column.
+
+| Warehouse  | Functions                                                                                                                  |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ClickHouse | `toDate(<col>)`, `toDateTime(<col>)`, `parseDateTimeBestEffort(<col>)`, `toDate(toString(<col>))` for integer-encoded dates |
+| BigQuery   | `CAST(<col> AS DATE)`, `PARSE_DATE('<format>', <col>)`, `PARSE_TIMESTAMP('<format>', <col>)`, `TIMESTAMP_SECONDS(<col>)`    |
+| Snowflake  | `TO_DATE(<col>[, '<format>'])`, `TO_TIMESTAMP(<col>)`, `TRY_TO_DATE(<col>)`                                                |
+| Postgres   | `(<col>)::date`, `(<col>)::timestamp`, `to_date(<col>, '<format>')`, `to_timestamp(<col>, '<format>')`                     |
+| DuckDB     | `CAST(<col> AS DATE)`, `strptime(<col>, '<format>')`, `epoch_ms(<col>)`                                                    |
+
+For columns already typed `Date` / `DateTime` / `TIMESTAMP`, no cast is
+needed — `expr: <col>` is enough.
+
+#### Examples
+
+ClickHouse table where `order_date` is stored as a `String`:
+
+```yaml
+dimensions:
+  - name: order_date
+    type: date
+    description: "Date when order was placed"
+    expr: "toDate(order_date)"
+```
+
+Snowflake table where `event_ts` is stored as `NUMBER` (Unix epoch seconds):
+
+```yaml
+dimensions:
+  - name: event_date
+    type: datetime
+    description: "Event timestamp"
+    expr: "TO_TIMESTAMP(event_ts)"
+```
+
+BigQuery table where `business_date` is stored as `INT64` in `YYYYMMDD`
+format:
+
+```yaml
+dimensions:
+  - name: business_date
+    type: date
+    description: "Business calendar date"
+    expr: "PARSE_DATE('%Y%m%d', CAST(business_date AS STRING))"
+```
+
 ## Measure Patterns
 
 **Note**: Measures can have filters applied directly in their definition using the `filters` property. Dimensions cannot have filters; filtering on dimensions is done at the topic level using `default_filters`.
@@ -481,6 +561,21 @@ dimensions:
 - Use identical entity names across related views
 - Verify entity keys reference the correct dimensions
 - Ensure dimensions exist with matching names
+
+### Type Mismatch on Date Filters
+
+**Error**: `TYPE_MISMATCH` raised the first time a query filters on a date
+dimension. The view loads cleanly; only filtering trips it.
+
+**Cause**: A date dimension is declared `type: number` or `type: string` over
+a column that isn't physically a `Date` / `DateTime` / `TIMESTAMP`. The
+semantic layer compiles a date literal into the WHERE clause that the
+column type rejects.
+
+**Fix**: Sample one row with `SELECT <col> FROM <table> LIMIT 1`, switch the
+dimension to `type: date` (or `datetime`), and wrap `expr:` with the
+appropriate cast function for your warehouse. See "Date Columns: Detect
+Format, Then Cast" above for the per-warehouse cast table.
 
 ## DeepWiki Fallback
 

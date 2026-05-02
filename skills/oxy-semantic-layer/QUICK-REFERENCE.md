@@ -83,6 +83,23 @@ oxy semantic-engine --dev-mode
   expr: "EXTRACT(YEAR FROM date_column)"
 ```
 
+### Date Casting
+
+A `type: date` / `type: datetime` dimension's `expr:` must produce a real
+date type. Wrap non-date columns with the warehouse-specific cast.
+
+| Warehouse  | Common cast forms                                                       |
+| ---------- | ----------------------------------------------------------------------- |
+| ClickHouse | `toDate(col)`, `parseDateTimeBestEffort(col)`, `toDate(toString(col))`  |
+| BigQuery   | `CAST(col AS DATE)`, `PARSE_DATE('%Y%m%d', col)`, `TIMESTAMP_SECONDS(col)` |
+| Snowflake  | `TO_DATE(col)`, `TRY_TO_DATE(col)`, `TO_TIMESTAMP(col)`                 |
+| Postgres   | `(col)::date`, `to_date(col, 'YYYY-MM-DD')`                             |
+| DuckDB     | `CAST(col AS DATE)`, `strptime(col, '%Y-%m-%d')`, `epoch_ms(col)`       |
+
+Sample one row first (`SELECT col FROM table LIMIT 1`) to see the stored
+format. A wrong cast surfaces as `TYPE_MISMATCH` at filter time, not at
+view-load time.
+
 ### Categorical Ranges
 
 ```yaml
@@ -153,6 +170,7 @@ default_filters:
 | "View not found" | File not in right location | Move to `semantics/views/` |
 | "Invalid SQL" | Bad expr syntax | Check column names and SQL syntax |
 | "Cannot join" | Entity names don't match | Use identical entity names |
+| `TYPE_MISMATCH` at filter | Date dimension typed as `number`/`string` over a non-date column | Switch to `type: date`, wrap `expr` with the warehouse's date-cast function |
 
 ## Best Practices
 
