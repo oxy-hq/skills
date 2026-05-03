@@ -57,7 +57,7 @@ pub fn run_all(dir: &Path, spec: &Spec, test_file: Option<&Path>) -> Result<Chec
     let (smoke, oxy_test_score) = if build == PassFail::Pass {
         let smoke = Some(smoke::check(dir, &spec.required_semantics, db_url_str)?);
         let oxy_test_score = match test_file {
-            Some(tf) => Some(oxy_test::check(dir, tf, db_url.as_deref())?),
+            Some(tf) => Some(oxy_test::check(dir, tf, db_url.as_deref(), false, false)?),
             None => None,
         };
         (smoke, oxy_test_score)

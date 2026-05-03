@@ -84,6 +84,14 @@ enum Command {
         /// Exit with code 1 if score is below this threshold (0.0–1.0)
         #[arg(long)]
         min_accuracy: Option<f32>,
+
+        /// Show full oxy test output including agent steps, actual responses, and judge reasoning
+        #[arg(long)]
+        verbose: bool,
+
+        /// Show only failed cases: judge reasoning and agent response for each failing run
+        #[arg(long)]
+        show_failures: bool,
     },
 
     /// Run oxy test against an existing instance and existing test file.
@@ -112,7 +120,7 @@ fn main() -> Result<()> {
 
     match cli.command {
         Command::Scenario {
-            dir, test_file, judge_criteria, question, expected, judge_model, runs, format, min_accuracy,
+            dir, test_file, judge_criteria, question, expected, judge_model, runs, format, min_accuracy, verbose, show_failures,
         } => {
             let result = scenario::run(
                 &dir,
@@ -122,6 +130,8 @@ fn main() -> Result<()> {
                 expected.as_deref(),
                 judge_model.as_deref(),
                 runs,
+                verbose,
+                show_failures,
             )?;
 
             if format == "json" {

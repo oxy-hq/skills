@@ -32,12 +32,14 @@ pub fn run(
     expected: Option<&str>,
     judge_model: Option<&str>,
     runs: u8,
+    verbose: bool,
+    show_failures: bool,
 ) -> Result<ScenarioResult> {
     let db_url = std::env::var("OXY_DATABASE_URL").ok();
 
     // Priority 1: explicit test file
     if let Some(tf) = test_file {
-        let score = oxy_test::check(dir, tf, db_url.as_deref())?;
+        let score = oxy_test::check(dir, tf, db_url.as_deref(), verbose, show_failures)?;
         let name = tf.file_name().and_then(|n| n.to_str()).unwrap_or("test.yml").to_string();
         return Ok(ScenarioResult {
             score,
@@ -51,7 +53,7 @@ pub fn run(
     if let (Some(q), Some(exp)) = (question, assertion) {
         let model = resolve_judge_model(dir, judge_model)?;
         let tf = write_judge_test(dir, q, exp, &model, runs)?;
-        let check_result = oxy_test::check(dir, &tf, db_url.as_deref());
+        let check_result = oxy_test::check(dir, &tf, db_url.as_deref(), verbose, show_failures);
         fs::remove_file(&tf).ok();
         let score = check_result?;
         return Ok(ScenarioResult {
@@ -79,7 +81,7 @@ pub fn run(
 
     let mut file_scores = Vec::new();
     for tf in &test_files {
-        let score = oxy_test::check(dir, tf, db_url.as_deref())?;
+        let score = oxy_test::check(dir, tf, db_url.as_deref(), verbose, show_failures)?;
         let name = tf.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
         file_scores.push(FileScore { name, score });
     }
