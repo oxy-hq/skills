@@ -216,6 +216,72 @@ If neither path is available (no name field exists in any related view),
 fall back to the FK but warn in the markdown header that rows are keyed
 by ID — never silently render UUIDs as a chart axis.
 
+## SQL dialect notes
+
+When you author or profile SQL inside an `execute_sql` task — or when you query
+the warehouse to check shape/distribution before picking fields — match the
+dialect to the configured database. The most common gotchas:
+
+| Dialect    | `DATE_TRUNC` form                                    | Stddev fn                      |
+| ---------- | ---------------------------------------------------- | ------------------------------ |
+| BigQuery   | `DATE_TRUNC(<col>, MONTH)` (column first, no quotes) | `STDDEV(<col>)`                |
+| Snowflake  | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| Postgres   | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| DuckDB     | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| ClickHouse | `toStartOfMonth(<col>)`                              | `stddevPop(<col>)` (lowercase) |
+
+Other places `.app.yml` SQL diverges across dialects:
+
+- **Identifier quoting** — `"col"` in Postgres/Snowflake; `` `col` `` in BigQuery/MySQL.
+- **Casting** — `CAST(x AS DATE)` is portable; `x::date` is Postgres-only.
+- **Date arithmetic** — `INTERVAL '1 day'` works in Postgres/DuckDB; BigQuery uses `DATE_ADD(d, INTERVAL 1 DAY)`.
+
+## Profiling template
+
+Before committing to a measure or entity for a chart or ranked table, profile
+the underlying data so you don't ship a flat-line trend or a top-10 with one
+row in it. One consolidated SELECT is enough:
+
+```sql
+SELECT
+  COUNT(*) AS rows,
+  COUNT(DISTINCT <entity_expr>) AS entity_card,
+  MIN(<time_expr>) AS min_date,
+  MAX(<time_expr>) AS max_date,
+  COUNT(DISTINCT DATE_TRUNC('month', <time_expr>)) AS month_count,
+  MIN(<measure_expr>) AS min_val,
+  MAX(<measure_expr>) AS max_val,
+  STDDEV(<measure_expr>) AS measure_stddev
+FROM <table>
+```
+
+Substitute `<entity_expr>`, `<time_expr>`, `<measure_expr>`, and `<table>` with
+the view's actual `expr:` strings — never guess column names. Apply the
+dialect substitutions above when the warehouse is BigQuery or ClickHouse.
+
+A topic is fit for ranking and trend visualizations when:
+
+- `rows >= 100`,
+- `month_count >= 3` (enough time for a meaningful trend),
+- `measure_stddev > 0` (not a flat measure that draws as a horizontal line at one value),
+- `entity_card` is between 5 and 500 (top/bottom-N actually differ).
+
+## Failure recovery
+
+Profiling queries fail mid-build for routine reasons — dialect mismatch,
+type-cast errors, an aggregation function the warehouse doesn't expose. The
+recovery rule is:
+
+1. **Simplify and retry once** — drop `STDDEV`, drop `month_count`, or
+   replace `DATE_TRUNC` with the dialect equivalent. At most two attempts per
+   topic in total.
+2. **Skip the topic on the second failure** — never loop on the same failing
+   query. Move on to the next candidate; if none qualify, omit the affected
+   block entirely rather than ship a misleading chart.
+
+This rule applies anywhere in `.app.yml` authoring where you query the
+warehouse before committing layout decisions.
+
 ## Workflow for Building Apps
 
 ### ALWAYS Follow This Process:
@@ -268,6 +334,40 @@ by ID — never silently render UUIDs as a chart axis.
    - Run `oxy validate --file=<path>` on the app file
    - Fix any validation errors before proceeding
    - Verify task names match display data references
+
+7. **Smoke-test the app end-to-end** (REQUIRED before declaring done)
+
+   `oxy validate` only catches structural YAML errors. It does **not** catch
+   malformed SQL — broken JOIN syntax, dialect-specific type mismatches,
+   missing `ON` clauses, type coercion failures — which all fail at
+   task-execution time. The most common failure mode is a brand-new
+   `.app.yml` that loads as a blank dashboard with a runtime error,
+   because the model wrote SQL that *parses* but doesn't *run* on the
+   target warehouse.
+
+   After every write or edit to a `.app.yml`, run every task end-to-end.
+   Two practical paths:
+
+   - **Open the app in the UI.** `oxy serve --enterprise` renders the app;
+     a working app shows every block populated, a broken one shows an
+     error banner naming the failing task.
+   - **Run each task manually.** For `type: execute_sql` tasks, run the
+     rendered `sql_query` against the same `database`. For
+     `type: semantic_query` tasks, run the same topic / dimensions /
+     measures through `oxy semantic-engine --dev-mode` (or the same
+     warehouse-query path your environment exposes).
+
+   Failure-recovery loop:
+
+   1. If every task succeeds, stop — the file is done.
+   2. If any task fails, read the error, diagnose, and apply **one**
+      targeted corrective edit (most common fixes: re-state the JOIN
+      with `ON`, replace a dialect-specific function with the matrix
+      entry from `## SQL dialect notes`, or drop the offending measure /
+      dimension and pick a different one from the view).
+   3. Re-run the smoke test **once**. If it still fails, stop and report
+      the error verbatim — do **not** loop. A second silent retry usually
+      compounds the bad guess.
 
 ## Data Reference Patterns
 

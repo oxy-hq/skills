@@ -149,6 +149,48 @@ With title:
   value: column_name          # REQUIRED: numeric value column
 ```
 
+## SQL Dialect Reference
+
+Use the right form for the configured database — the most common gotchas in
+`execute_sql` task SQL:
+
+| Dialect    | `DATE_TRUNC` form                                    | Stddev fn                      |
+| ---------- | ---------------------------------------------------- | ------------------------------ |
+| BigQuery   | `DATE_TRUNC(<col>, MONTH)` (column first, no quotes) | `STDDEV(<col>)`                |
+| Snowflake  | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| Postgres   | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| DuckDB     | `DATE_TRUNC('month', <col>)`                         | `STDDEV(<col>)`                |
+| ClickHouse | `toStartOfMonth(<col>)`                              | `stddevPop(<col>)` (lowercase) |
+
+Other divergences:
+
+| Concern             | Postgres / DuckDB         | Snowflake                 | BigQuery                          | ClickHouse / MySQL    |
+| ------------------- | ------------------------- | ------------------------- | --------------------------------- | --------------------- |
+| Identifier quoting  | `"col"`                   | `"col"`                   | `` `col` ``                       | `` `col` `` / unquoted |
+| Cast to date        | `CAST(x AS DATE)`, `x::date` | `CAST(x AS DATE)`      | `CAST(x AS DATE)`                 | `toDate(x)`           |
+| Date arithmetic     | `d + INTERVAL '1 day'`    | `DATEADD(day, 1, d)`      | `DATE_ADD(d, INTERVAL 1 DAY)`     | `d + INTERVAL 1 DAY`  |
+
+## Profiling Template
+
+Before committing a measure or entity to a chart, profile the underlying data
+in one consolidated SELECT:
+
+```sql
+SELECT
+  COUNT(*) AS rows,
+  COUNT(DISTINCT <entity_expr>) AS entity_card,
+  MIN(<time_expr>) AS min_date,
+  MAX(<time_expr>) AS max_date,
+  COUNT(DISTINCT DATE_TRUNC('month', <time_expr>)) AS month_count,
+  MIN(<measure_expr>) AS min_val,
+  MAX(<measure_expr>) AS max_val,
+  STDDEV(<measure_expr>) AS measure_stddev
+FROM <table>
+```
+
+Fitness thresholds for ranking / trend visualizations: `rows >= 100`,
+`month_count >= 3`, `measure_stddev > 0`, `entity_card` between 5 and 500.
+
 ## Canonical Snippets
 
 ### 1. SQL -> Table
