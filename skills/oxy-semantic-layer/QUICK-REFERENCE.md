@@ -153,6 +153,23 @@ default_filters:
 | "View not found" | File not in right location | Move to `semantics/views/` |
 | "Invalid SQL" | Bad expr syntax | Check column names and SQL syntax |
 | "Cannot join" | Entity names don't match | Use identical entity names |
+| `TYPE_MISMATCH` at filter | Date dim declared `type: number`/`string` over a non-Date column | Sample one row, switch to `type: date`/`datetime`, wrap `expr` with the cast for your warehouse |
+
+## Date Column Casts
+
+Sample the column first (`SELECT <col> FROM <table> LIMIT 1`) — stored format
+varies. Then wrap `expr:` for the dimension:
+
+| Warehouse  | Cast functions                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| ClickHouse | `toDate(<col>)`, `toDateTime(<col>)`, `parseDateTimeBestEffort(<col>)`, `toDate(toString(<col>))` |
+| BigQuery   | `CAST(<col> AS DATE)`, `PARSE_DATE('<fmt>', <col>)`, `TIMESTAMP_SECONDS(<col>)`               |
+| Snowflake  | `TO_DATE(<col>[, '<fmt>'])`, `TO_TIMESTAMP(<col>)`, `TRY_TO_DATE(<col>)`                       |
+| Postgres   | `(<col>)::date`, `to_date(<col>, '<fmt>')`, `to_timestamp(<col>, '<fmt>')`                     |
+| DuckDB     | `CAST(<col> AS DATE)`, `strptime(<col>, '<fmt>')`, `epoch_ms(<col>)`                           |
+
+Already-typed `Date` / `DateTime` / `TIMESTAMP` columns need no cast —
+`expr: <col>` is enough.
 
 ## Best Practices
 
