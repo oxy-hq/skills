@@ -56,11 +56,14 @@ semantic_engine: { vendor: cube, base_url: ..., api_token: "${X}" }
 
 ```yaml
 thinking: adaptive            # shorthand
-thinking: disabled            # shorthand (must be a string, not `false`)
+thinking: disabled            # shorthand — bare or quoted both work
+thinking: "disabled"          # equivalent
 thinking: effort:low          # OpenAI o-series shorthand
 thinking: { budget_tokens: 10000 }
 thinking: { effort: medium }  # low | medium | high
 ```
+
+`disabled` is a string identifier, not a boolean — bare `false` is rejected.
 
 ## Context globs by extension
 
@@ -120,7 +123,7 @@ Tunable params:
 | `validation config error: unknown rule …`  | Use a rule name from the table above                      |
 | `YAML parse error: duplicate key`          | Each top-level key must appear once per file              |
 | State override silently ignored            | State key must be one of the 5 fixed names                |
-| `thinking: disabled` rejected              | Quote it: `thinking: "disabled"`                          |
+| `thinking: false` rejected                 | Use `thinking: disabled` (bare or quoted) — never bare boolean `false` |
 
 ## Validation workflow
 
