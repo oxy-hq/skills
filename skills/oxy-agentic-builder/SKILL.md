@@ -168,7 +168,8 @@ Three forms accepted:
 
 ```yaml
 thinking: adaptive          # shorthand
-thinking: disabled          # shorthand
+thinking: disabled          # shorthand — bare or quoted both work
+thinking: "disabled"        # equivalent to bare form
 thinking: effort:low        # OpenAI o-series shorthand (low|medium|high)
 
 thinking:                   # explicit budget (Anthropic)
@@ -179,7 +180,8 @@ thinking:                   # OpenAI o-series map form
 ```
 
 Per-state overrides accept the same forms. `disabled` is a string
-shorthand, not the boolean `false`.
+identifier — bare `disabled` and quoted `"disabled"` are both accepted.
+The bare boolean `false` is **rejected**; never write `thinking: false`.
 
 ### `states`
 
@@ -309,7 +311,7 @@ they're concatenated, not replaced.
 | `semantic engine connection error: …`                   | `semantic_engine.base_url` unreachable / token rejected     | Verify the URL and credentials with `curl` before launching the server.                      |
 | `validation config error: unknown rule '…'`             | Rule name typo                                              | Use only the rule names listed in the table above; case-sensitive snake_case.                 |
 | State override silently ignored                         | Misspelled state key (`solve` vs `solving`)                 | State keys are fixed: `clarifying`, `specifying`, `solving`, `executing`, `interpreting`.    |
-| `thinking: disabled` rejected                           | YAML coerced it to a boolean                                | Quote it: `thinking: "disabled"`. The shorthand is a string, not `false`.                    |
+| `thinking: false` rejected                              | Boolean `false` is not a valid thinking mode                | Use `thinking: disabled` (bare or quoted both work); the shorthand is a string identifier, never a boolean. |
 | LLM never sees the `solving` instructions               | Question was answerable by the semantic layer               | Move guidance into `clarifying` or `interpreting`; `solving` is skipped on the semantic path. |
 | `YAML parse error: duplicate key`                       | A top-level key (`llm:`, `states:`) appears twice           | Each top-level key must appear at most once per file.                                        |
 
