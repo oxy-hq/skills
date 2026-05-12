@@ -1,74 +1,339 @@
 ---
 name: agentic-browser-test
-description: "Use when an Oxy dev working in oxy-hq/oxygen-internal asks for a browser-driven UI test of a feature they just built or want to regression-cover — phrases like 'add a test for…', 'write a flow that…', 'test that <feature> still works', 'I just built X, test it', 'regression test for the bug I just fixed', 'make sure the chat panel handles X'. Produces a runnable .flow.test.yml under web-app/tests/agentic/flows/ that the dev runs with `pnpm test:agentic`. Skip for unit tests (Vitest/cargo nextest), Oxy agent eval tests (.agent.test.yml / .aw.test.yml — the oxy-test-drafter skill handles those), or backend Rust integration tests."
+description: "Use when an Oxy dev or coding agent working in oxy-hq/oxygen-internal needs to create, update, maintain, or run/debug an agentic browser flow under web-app/tests/agentic/. Triggers include 'add a test for…', 'write a flow that…', 'this flow is failing', 'accept the healing recording', 'why did the agentic CI job fail?', 'regression test for the bug I just fixed'. Produces or repairs .flow.test.yml files and routes the dev through triage / healing / cache hygiene. Skip for unit tests (Vitest/cargo nextest), Oxy agent eval tests (.agent.test.yml / .aw.test.yml — the oxy-test-drafter skill handles those), or backend Rust integration tests."
 ---
 
 # Agentic Browser Test Skill
 
-You are an expert at translating an Oxy dev's verbal description of a UI feature into a runnable `.flow.test.yml` under `web-app/tests/agentic/flows/` in `oxy-hq/oxygen-internal`. The dev should never have to learn the YAML schema, what `act:` / `wait_for:` / `expect:` is, what the action cache does, or how the runner is wired. **You are the abstraction.**
+You are the expert covering **all four reasons** a developer or coding agent interacts with the agentic browser testing system in `oxy-hq/oxygen-internal`:
 
-The agentic browser-test runtime is the **bespoke** runtime (`@anthropic-ai/sdk` + a custom tool registry driving vanilla Playwright). It exposes a small set of generic browser tools (`browser_snapshot`, `browser_click`, `browser_type`, `browser_press_key`, `browser_keyboard_type`, `browser_navigate`, `browser_wait_for_selector`, `browser_get_page_text`, `browser_screenshot`) to an LLM and lets the model read the page and act. Your YAML is the *flow*; the runtime is the *driver*.
+1. **Creating** a new flow for a new feature or regression. (`/test-feature`)
+2. **Updating** an existing flow when the product surface changes. (`/agentic-test-add-case`)
+3. **Maintaining** the suite — accepting healing recordings, fixing broken flows, managing cache hygiene, calibrating budgets. (`/fix-agentic-test`, `/accept-agentic-healing`)
+4. **Running / debugging** a failing flow locally or in CI. (`/run-agentic-tests`, `/fix-agentic-test`)
+
+The dev should never have to learn the YAML schema, what `act:` / `wait_for:` / `expect:` is, how the action cache works, what Tier-1 vs Tier-2 healing means, or which bucket their new flow lands in. **You are the abstraction.**
 
 ---
 
 ## Step 0 — Always re-read source of truth (every invocation)
 
-The runner, schema, and authoring conventions evolve. **Before writing any YAML, read these files from the user's `oxy-hq/oxygen-internal` checkout. Do not cache them across invocations.**
+The runtime, schema, and authoring conventions evolve fast. **Before writing or repairing any YAML, read these from the user's `oxy-hq/oxygen-internal` checkout. Do not cache them across invocations.**
 
-1. `web-app/tests/agentic/README.md` — runner mechanics, step kinds, `wait_for:` primitives, expect kinds, setup fixture commands, action-cache contract, output format. **This is the authoritative schema reference.**
-2. `web-app/tests/agentic/flows/*.flow.test.yml` — every existing flow. Treat them as canonical authoring examples. Reflect the team's current taste for prompt phrasing and where to gate with `wait_for:`.
-3. `json-schemas/flow-test.json` — JSON schema for `.flow.test.yml`. Use this for structural validation in self-check.
-4. `internal-docs/agentic-browser-testing-findings.md` — runtime A/B verdict + the bespoke runtime's behaviour contract. Read the *Pitfalls* section — those bugs are paid-for and your YAML must not regress them.
-5. *(If present)* `internal-docs/agentic-browser-testing-followups.md`, `internal-docs/agentic-browser-testing-next-steps.md` — open work. Some items (cache-key bugfix, secret substitution, sub-flow includes, additional setup fixtures) may have landed since this skill was written. Read both files to learn what new primitives are available.
-6. *(For UI selectors)* `web-app/src/**/*.tsx` — `grep -nE 'data-testid="[^"]*"'` for stable testids you can put directly in `act:` prompts. **A flow with explicit `[data-testid=…]` selectors converges in 1–2 LLM iterations; a pure-natural-language flow against a busy page can burn 10+ iterations.** Bias hard toward testids when they exist. If the dev describes a feature whose UI lacks testids, mention this as a follow-up.
+Canonical sources (the integration branch is `claude/agentic-tests-v1`; `main` lags behind):
 
-If anything in this SKILL conflicts with those files, **the files win**. The schema and the set of available primitives evolve; do not bake a frozen view of them into your output.
+1. `web-app/tests/agentic/README.md` — runner mechanics, step kinds, `wait_for:` primitives, setup commands, action-cache contract, output format.
+2. `json-schemas/flow-test.json` — schema for `.flow.test.yml`. Settings keys, enum values, defaults, validation rules.
+3. `web-app/tests/agentic/canonical-prompts.md` — verbatim copy-pasteable step text for cross-flow `cache_scope: shared` reuse.
+4. `web-app/tests/agentic/flows/*.flow.test.yml` — every existing flow. Canonical authoring examples.
+5. `web-app/tests/agentic/flows/_budgets.yml` — per-flow cost ceilings. When generating a new flow, add an entry here.
+6. `web-app/tests/agentic/runner/` — runtime source. The authoritative answer to "is this tool / primitive / fixture available?" is in `tool-registry.ts`, `fixtures/reset.ts` (note: `fixtures/` is a sibling of `runner/`), `cli.ts`, `action-cache.ts`, `selectors.ts`, `healing.ts`, `lint.ts`, `secrets.ts`.
+7. `.github/workflows/ci.yaml` — agentic-tests matrix shape (bucket layout), cache key formula, `agentic_only` dispatch.
+8. `internal-docs/agentic-browser-testing-findings.md` — runtime A/B verdict, post-A.x optimisations, v2 durability mechanism, incident retrospective, dated change log.
+9. `internal-docs/agentic-browser-testing-team-overview.md` — team-facing CI mechanics + cost.
+10. `internal-docs/agentic-browser-testing-cache-and-cost-model.md` — cache invalidation taxonomy + steady-state cost model.
 
----
-
-## Trigger phrases that activate this skill
-
-- "add a test for …"
-- "write a flow that …"
-- "test that <feature> still works"
-- "I just built X, test it"
-- "regression test for the bug I just fixed"
-- "make sure the chat panel handles X"
-- "cover this with an agentic test"
-
-## Trigger phrases that do NOT activate this skill (delegate)
-
-- "write a unit test for …" → cargo nextest or Vitest, not this skill.
-- "write an oxy agent test" / "draft expecteds for my agent" → the `oxy-test-drafter` skill handles `*.agent.test.yml` / `*.aw.test.yml`.
-- "test the API endpoint …" → Rust integration tests, not this skill.
-- "test the workflow YAML" → likely an Oxy `.workflow.yml` test → `oxy-test-drafter`.
-
-If the user's request is ambiguous between this skill and `oxy-test-drafter`, ask: "Are you covering an Oxy agent or workflow's outputs (oxy-test-drafter), or the web app's UI (this skill)?"
+If anything in this SKILL conflicts with those files, **the files win**.
 
 ---
 
-## Q&A protocol
+## Step 1 — Identify the user's mode
 
-When the dev gives a clear one-shot description like *"test that the new sales-summary widget renders without error after I click 'Run' on it"*, **skip the Q&A**. Infer answers, write the YAML directly, then confirm with the dev before saving.
+The same dev request can map to any of the four modes. Map intent to skill route:
 
-When the description is too vague to author from, run a short Q&A. Stop asking once you have enough. Use `AskUserQuestion` for multiple-choice answers and avoid asking more than 2–3 questions in one round.
+| Phrase | Mode | Skill route |
+|---|---|---|
+| "add a test for…", "write a flow that…", "I just built X, test it" | Create | `/test-feature` |
+| "add a case to chat-ask that covers…", "extend builder-edits-app to also…" | Update | `/agentic-test-add-case` |
+| "this flow is failing in CI", "the trace shows…", "agentic/builder is red on my PR" | Run/debug | `/run-agentic-tests` for repro, then `/fix-agentic-test` for triage |
+| "the runtime staged a healing recording — what do I do?", "PR comment says healing-staging.json is populated" | Maintain (Tier-2) | `/accept-agentic-healing <flow>` |
+| "selector_drift_events went up but tests still passed" | Maintain (Tier-1) | No action needed — the cache silently re-ranked. Surface for awareness. |
+| "bump CACHE_VERSION", "suite-wide cold rerun" | Maintain (cache hygiene) | `/fix-agentic-test` (cache health branch) |
 
-Topics to elicit, in priority order:
+Ambiguous: ask via `AskUserQuestion`. Don't guess across modes — creating a new flow when the dev wanted a case-add is wasted work.
 
-1. **Surface area** → maps to `target:` in YAML. Choose from the README's enum (`chat`, `ide`, `threads`, `onboarding`, `any`). New values may exist — read the schema first.
-2. **Setup state**. What must be true before the test starts? An LLM key configured, a workspace existing, a specific file present, a warehouse connected? Map to whatever setup commands the README documents (today: `reset_test_file`, `goto:/path`; future fixtures may exist — read the README).
-3. **Mode**. Local (`oxy start --local --enterprise`, no auth, port 3000 + 5173) or cloud (auth-enabled, internal port 3001)? Default to whichever the dev's running backend matches — your `/run-agentic-tests` command can detect this; ask the dev to run it once if you're unsure.
-4. **User actions**. Numbered list of what the user does, in their own words. You'll rewrite these as `act:` + `wait_for:` pairs.
-5. **Success criterion**. One sentence the dev would say to a colleague to describe "the test passed". This becomes a `judge:` claim.
-6. **Structural assertions** (optional). "A SQL artifact appears", "the save button hides", "the URL changes to /threads/<id>" → these become `assert:` items.
+### Trigger phrases that do NOT activate this skill (delegate)
+
+- "write a unit test for …" → cargo nextest or Vitest.
+- "write an oxy agent test" / "draft expecteds for my agent" → `oxy-test-drafter` skill handles `*.agent.test.yml` / `*.aw.test.yml`.
+- "test the API endpoint …" → Rust integration tests.
+- "test the workflow YAML" → likely `oxy-test-drafter`.
 
 ---
 
-## What you produce
+## Runtime primitives — the current surface
 
-**Exactly one file** at `web-app/tests/agentic/flows/<descriptive-kebab-name>.flow.test.yml`. Naming: lower-kebab, describes what the flow does (e.g., `chat-ask.flow.test.yml`, `ide-save.flow.test.yml`, `reset-button-clears-workspace.flow.test.yml`). Match the existing flows' naming taste.
+The runtime is the **bespoke** runtime (`@anthropic-ai/sdk` + a custom tool registry driving vanilla Playwright). It exposes exactly the tools / wait primitives / setup commands below. **Do not invent any others** — the loader and judge throw on unknown values.
 
-Structurally each flow has:
+### Tools (10) — authoritative: `runner/tool-registry.ts:TOOLS`
+
+| Tool | State-changing? | Notes |
+|---|---|---|
+| `browser_snapshot` | no | Compact a11y-tree text (≤12kB). Optional `region: "main"` or `region: "<css>"`. |
+| `browser_click` | yes | 5s timeout. |
+| `browser_type` | yes | Fills (or appends with `append: true`). |
+| `browser_press_key` | yes | Single key or chord (`Enter`, `Meta+s`, `Control+Enter`). |
+| `browser_keyboard_type` | yes | Raw keyboard into the focused element. **Required for Monaco** — `browser_type`'s selector-based fill picks the hidden textarea wrong. |
+| `browser_file_upload` | yes | Playwright `setInputFiles`. Selector points at `<input type="file">` (often hidden behind a styled drop zone — the onboarding wizard's id is `credential-<key>`, so `#credential-<key>` works). Paths array is repo-relative; absolute paths and `..` traversal refused by `runner/files.ts:resolveRepoFile()`. |
+| `browser_navigate` | yes | Absolute URL or relative path. |
+| `browser_screenshot` | no | PNG base64. Expensive; the judge already screenshots. |
+| `browser_wait_for_selector` | no | 10s visibility wait. |
+| `browser_get_page_text` | no | Truncated `body.innerText` fallback when snapshot is noisy. |
+
+Only the six state-changing tools persist into the action cache (`tests/agentic/.cache/bespoke-actions.json`). Snapshots and screenshots are observation-only.
+
+### `wait_for:` primitives (4) — authoritative: `runWaitFor` in `tool-registry.ts`
+
+| Primitive | What it waits for |
+|---|---|
+| `streaming_complete` | Chat stream finishes (loading state appears, then stop button hides). 20s appear-window, 240s disappear-window. |
+| `network_idle` | Playwright `networkidle` (no requests for 500ms). |
+| `selector:<sel>[;timeout_ms=<n>]` | Element matching `<sel>` becomes visible. Default 30s; override via the suffix for legitimately-long waits (build phases, agentic runs). |
+| `selector_hidden:<sel>[;timeout_ms=<n>]` | Element matching `<sel>` disappears. Use when the act/wait sequence finishes faster than the UI it triggers — the classic case is warm-replay screenshots before a `[data-testid=app-preview-loading]` spinner clears. |
+
+### Setup commands (7) — authoritative: `fixtures/reset.ts:SetupCommand`
+
+| Command | Mode | Notes |
+|---|---|---|
+| `reset_test_file` | local | Empties `demo_project/test.sql`. Refuses symlinks / paths escaping repo. |
+| `restore_demo_file:<rel>` | local | Reverts `demo_project/<rel>` to `git show HEAD:demo_project/<rel>`. Used by flows that mutate a demo file (e.g. `builder-edits-app` editing `insights.app.yml`) so reruns start from the same canonical state. Refuses paths that escape the repo, contain `..`, or resolve through a symlink. Reads from HEAD without touching the index. |
+| `goto:<path>` | both | Navigate to `<OXY_BASE_URL><path>` before the case starts. |
+| `seed_org:<name>` | cloud | POSTs to `/api/orgs` on the auth-disabled internal port (3001). Stores `org_id` + `org_slug` in seed state. **Restricted to `localhost:3001` / `127.0.0.1:3001`** via `ALLOWED_BASE_URLS` in `fixtures/reset.ts` — any new `seed_*` that calls another host is rejected at code-review. |
+| `seed_blank_workspace:<name>` | cloud | Requires prior `seed_org`. POSTs to `/api/orgs/{org_id}/onboarding/new`. |
+| `seed_demo_workspace:<_>` | cloud | Requires prior `seed_org`. POSTs to `/api/orgs/{org_id}/onboarding/demo` (Demo Workspace with sample agents + DuckDB). The `<_>` arg is ignored. |
+| `goto_workspace:<_>` | cloud | Requires prior `seed_org` + `seed_*_workspace`. Navigates to `/<slug>/workspaces/<uuid>`. Skips the UI prelude. The `<_>` arg is ignored. |
+
+### Flow settings — authoritative: `json-schemas/flow-test.json`
+
+```yaml
+settings:
+  runs: 1                                  # int, min 1
+  model: claude-sonnet-4-6                 # default; haiku is too flaky as a pickup model
+  judge_model: claude-haiku-4-5-20251001
+  trace: on-failure                        # on-failure | always | never
+  cache_actions: true                      # disables the whole cache when false
+  max_steps: 30                            # upper bound on LLM tool-pick iterations PER step
+  backend_mode: local                      # local | cloud — picks which oxy boot the runner auto-spawns
+```
+
+- `backend_mode: local` → `oxy start --local --enterprise` from `demo_project/`, runner targets `http://localhost:3000`.
+- `backend_mode: cloud` → `oxy start --enterprise --clean` from repo root, runner targets the auth-disabled internal port `http://localhost:3001`. `--clean` wipes the Postgres volume so create-org doesn't 409 on rerun. If a backend is already healthy at the resolved URL, the runner uses it as-is and does not respawn (no `--clean` side effect).
+- **All flows in a single invocation must agree on `backend_mode`.** The runner errors loudly on mixed-mode loads.
+
+### Step `cache_scope`
+
+```yaml
+steps:
+  - act: |
+      …canonical step text…
+    cache_scope: shared      # 'shared' | 'flow' (default 'flow')
+```
+
+- `cache_scope: flow` (default): key = `sha256(flowFile|caseName|stepIndex|stepText)`. Recording is private to this flow/case/step.
+- `cache_scope: shared`: key = `sha256("shared|" + stepText)`. Two flows with byte-identical step text share one recording. Used today for:
+  - Cloud-mode onboarding prelude (welcome → create-org → skip-invite → blank workspace) in `onboarding-blank-workspace`.
+  - Chat-prelude ("Submit … to the default agent…") shared by `chat-ask` and `threads-list`.
+
+**Rule:** when copying a step **verbatim** from `canonical-prompts.md`, opt into `cache_scope: shared`. When the step body has flow-specific variation, leave at default `flow`.
+
+### Expectations
+
+- `assert: <claim>` — deterministic, $0. Supported forms (read `runner/judge.ts`):
+  - `selector <sel> is visible` / `is not visible`
+  - `selector <sel> has attribute <attr>=<value>`
+  - `text "<text>" is visible`
+  - `<description> is enabled`
+  - `save button is not visible` (IDE-specific 5s waitFor helper)
+- `judge: <claim>` — LLM-as-judge against current screenshot + DOM text. ~$0.002 per call with `claude-haiku-4-5-20251001`.
+
+Reserve `judge:` for soft semantic claims. Never `judge:` something you can `assert:`.
+
+---
+
+## Authoring rules — these matter for cost and reliability
+
+### Selectors: hierarchy + multi-strategy durability
+
+Selector preference order (the runtime ranks fallbacks the same way in `selectors.ts:materializeStrategies`):
+
+1. `[data-testid=foo]` — most stable. Survives copy edits, i18n, ARIA refactors.
+2. `role=button[name='Save']` — stable across CSS/Tailwind refactors.
+3. `text=Save` — fragile against copy edits.
+4. CSS class / structure (`.foo button`) — fragile against component refactors.
+
+**The runtime auto-records 2–3 fallback strategies per state-changing action.** Even a suboptimal primary selector gets durability fallbacks materialized from the resolved DOM at record time. Tier-1 healing silently re-ranks when a fallback wins. So a `text=` primary isn't fatal — but a recording that never lands on a testid primary defeats the durability story.
+
+Grep `web-app/src/**/*.tsx` for `data-testid="…"` before authoring. When a button you need lacks a testid, **add one to the source component** as a one-line follow-up — it's the most stable long-term option.
+
+### Prompt verbosity tradeoffs
+
+Verbose `act:` prompts with explicit selectors converge faster on cold runs (1–2 LLM iterations vs 5–10), so per-step cost is **lower** despite more input tokens.
+
+**Concrete patterns that earn their tokens:**
+- Quote the testid verbatim: `Click [data-testid=agent-selector-button]`.
+- Number sub-steps for tightly-coupled actions.
+- Disambiguate when the page has duplicates: *"the file editor's Monaco surface — the TOP one, NOT the SQL results pane below"*.
+- Tool hint when the right primitive is non-obvious: *"Use browser_keyboard_type (NOT browser_type — Monaco's hidden textarea makes selector-based fill unreliable)"*.
+
+**Tokens that don't pay rent (the 2026-05-11 tightening pass dropped these):**
+- Rationale paragraphs explaining why a verb was chosen. If the testid is correct, the rationale is dead weight.
+- "Edit @insights" verb prefixes (the Cmd+I dialog auto-prepends `@insights`).
+- Over-cautious disambiguators ("not the Ask mode toggle") when the testid is already unambiguous.
+- Radix `DropdownMenu` prose — the `role=menuitem[name='…']` selector carries the same information.
+
+Generate concise prompts. Rationale belongs in YAML comments above the step, not in the step body.
+
+### Atomic vs compound `act:` steps
+
+- **Default: atomic.** One logical user action per `act:` step. Each step is its own cache entry — editing one doesn't invalidate the others.
+- **Compound only when actions are causally coupled.** The classic case is the Cmd+I builder dialog: pressing Meta+i twice closes it, so the open + auto-approve-toggle + type + submit sequence has to be one `act:`. **Cap compound steps at 5 actions max.**
+- Measured: atomic cold $0.34 vs compound cold $0.42 for `ide-save`; warm tied at ~$0.002. Atomic usually wins on cold cost too.
+
+### `wait_for:` placement
+
+After every `act:` whose post-condition is non-trivial. Pair each user action with a wait that names the gate proving the action worked:
+- chat submit → `wait_for: streaming_complete`
+- navigation → `wait_for: "selector:<thing-on-the-new-page>"`
+- loading spinner clear → `wait_for: "selector_hidden:[data-testid=app-preview-loading]"`
+- network mutation → `wait_for: network_idle`
+
+Without these gates, the next `act:` runs before the page is ready and either flakes or burns LLM iterations as the model figures out the page is mid-transition.
+
+### Secrets
+
+`${VAR}` placeholders in `act:` text. Validated at YAML load time (missing var throws). Substituted only at egress (Anthropic API send + Playwright dispatch). The action cache and result artifact always store the placeholder, never the plaintext.
+
+Current `SECRET_ENV_VARS` allowlist (in `runner/secrets.ts`):
+- `ANTHROPIC_API_KEY`
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `CLICKHOUSE_PASSWORD`
+- `OXY_DATABASE_URL`
+
+Adding a new secret requires extending `SECRET_ENV_VARS`. `redactArgs()` is a defense-in-depth check — it throws if a plaintext value slips through. Values shorter than 8 chars (e.g. `GEMINI_API_KEY=empty`) are treated as test stubs and not substituted.
+
+**`cache_actions: false` is no longer required for secret correctness** — egress-substitution covers it. Flip to false only for operational concerns like forcing every step cold for a benchmark.
+
+### Budgets
+
+Per-flow cost ceilings live in `web-app/tests/agentic/flows/_budgets.yml`. The reporter compares observed cost against the ceiling and surfaces a `⚠️` in the markdown summary on overage (advisory, never fails CI). **When generating a new flow, add a budget entry.**
+
+Reasonable defaults:
+
+| Shape | `cold_usd` | `warm_usd` |
+|---|---|---|
+| Simple (1–3 act steps, no builder / onboarding) | 0.30 | 0.005 |
+| Builder / multi-step | 0.50 | 0.01 |
+| Cloud-mode onboarding-class | 1.00 | 0.01 |
+
+### `--scaffold` integration
+
+When the dev has a component path in mind, prefer scaffolding from it:
+
+```bash
+pnpm test:agentic --scaffold <feature-name> --from <component-path>
+```
+
+`runner/scaffold.ts` extracts existing testids from the source and pre-populates an `act:` template with them. Less authoring work + better default selectors out of the gate.
+
+---
+
+## Hard rules — red lines
+
+These must show up in every authoring + run command. Encoded in `web-app/tests/agentic/README.md`'s top-level policy section.
+
+1. **Read-only against external systems.** Never seed/drop/mutate any database, warehouse, port-forward, or shared service from a fixture or flow. The `seed_*` commands are allowed only because of the `ALLOWED_BASE_URLS` allowlist (`localhost:3001` / `127.0.0.1:3001`). Any proposed `seed_*` that wants to call out is rejected at code-review.
+2. **Never type secrets as plaintext.** Use `${VAR}` placeholders for any value in `SECRET_ENV_VARS`. Adding a new secret env var requires extending the allowlist.
+3. **Never auto-promote Tier-2 healing recordings.** They stage to `.cache/healing-staging.json`, not `bespoke-actions.json`. Promotion requires `--accept-healing <flow>` so a developer reviews the new selectors before they become ground truth.
+
+These three rules trace back to the 2026-05-06 ClickHouse incident retrospective in `internal-docs/agentic-browser-testing-findings.md`. Don't paper over them.
+
+---
+
+## CI mechanics — what hits the matrix
+
+The `agentic-tests` job in `.github/workflows/ci.yaml` runs flows in **5 domain buckets** (not one job per flow):
+
+| Bucket | Flows | Mode | Port |
+|---|---|---|---|
+| `builder` | `builder-edits-app`, `builder-rejected-suggestion` | local | 3000 |
+| `ask-agent` | `chat-ask`, `chat-panel-agent-switch` | local | 3000 |
+| `threads` | `threads-list` | local | 3000 |
+| `ide` | `ide-save` | local | 3000 |
+| `onboarding` | `onboarding-blank-workspace` | **cloud** | 3001 |
+
+Filename → bucket mapping for new flows:
+- `builder-*` → `builder`
+- `chat-*` → `ask-agent`
+- `threads-*` → `threads`
+- `ide-*` → `ide`
+- `onboarding-*` → `onboarding`
+
+If a new flow doesn't match any prefix, surface to the dev: "This needs a new bucket entry in `.github/workflows/ci.yaml` (search for `flow:` under the agentic-tests matrix). Buckets share `backend_mode`, so don't add a cloud-mode flow to a local-mode bucket — split the bucket by mode first."
+
+**`ide-compile-error`** is in `flows/` but **NOT in any bucket** — gated on Monaco SQL diagnostic service shipping. Don't reference it as a CI-live example.
+
+**Fast-iteration dispatch:** `agentic_only=true` on `workflow_dispatch` cuts CI feedback from ~45 min to ~15 min by skipping typos / fmt-web / build-web / smoke / E2E / cargo clippy / cargo nextest:
+
+```bash
+gh workflow run "CI check" --repo oxy-hq/oxygen-internal \
+  --ref <branch> --field agentic_only=true
+```
+
+Bucket cache key:
+
+```
+agentic-actions-${runner.os}-${matrix.flow.name}-${hashFiles(
+  'web-app/tests/agentic/flows/*.flow.test.yml',
+  'web-app/tests/agentic/runner/runtimes/bespoke.ts',
+  'web-app/tests/agentic/runner/runtimes/replay.ts',
+  'web-app/tests/agentic/runner/selectors.ts',
+  'web-app/tests/agentic/runner/tool-registry.ts',
+  'web-app/tests/agentic/runner/action-cache.ts'
+)}
+```
+
+Bucket-prefix restore-keys fall back to the most recent cache file for the bucket; per-step entries still warm-replay even when a different flow's YAML moved.
+
+`continue-on-error: true` is on while calibrating. Flip-off criterion: ≥3 consecutive green main-branch runs.
+
+After each run, if `.results/healing.json` is non-empty (Tier-2 heal happened) the job posts a PR comment summarizing drift events with the `--accept-healing` command. `/fix-agentic-test` walks the dev through what to do with that comment.
+
+---
+
+## Action cache + healing model
+
+Cache file: `web-app/tests/agentic/.cache/bespoke-actions.json`. Schema version: `CACHE_VERSION = 3` (defined in `runner/action-cache.ts`).
+
+### Three layers of invalidation
+
+| Layer | Trigger | Blast radius |
+|---|---|---|
+| A | `CACHE_VERSION` bump | Entire cache. Used for shape changes (e.g. multi-strategy selectors in v3). |
+| B | `act:` / `expect:` text edited; flow rename; case rename; earlier step inserted/removed. (With `cache_scope: shared`, only step text matters.) | That step redrives **and every subsequent step in the same case**. Other cases / flows unaffected. |
+| C1 | A recorded fallback selector resolves (primary failed) | **No invalidation.** Strategies silently re-rank. $0. |
+| C2 | All recorded strategies for one action fail | That step redrives cold via intent-aware redrive. New recording staged to `.cache/healing-staging.json` (NOT main cache). Same downstream blast as B until `--accept-healing` promotes it. |
+
+### What does NOT invalidate
+
+- Single testid rename when other strategies resolve.
+- Label / copy / i18n edits.
+- Tailwind / CSS refactors.
+- Wrapper `<div>` added/removed.
+- Prop changes that don't surface in DOM.
+- Backend / non-UI changes.
+- New flow that doesn't share a `cache_scope: shared` key.
+
+### Tier-1 vs Tier-2
+
+- **Tier-1 silent heal** (W1.3): a fallback resolved. The cache entry's strategies are re-ranked (winning strategy → rank 0). $0 LLM cost. Logged as `selector_drift_events` for telemetry. No developer action required — surface it for awareness only.
+- **Tier-2 staged heal**: every recorded strategy failed. The runtime does an intent-aware redrive starting from the partially-replayed page state, stages the new recording to `.cache/healing-staging.json`, and writes a CI PR-comment summary. Promotion requires `pnpm test:agentic --accept-healing <flow>`.
+
+The `/fix-agentic-test` command routes the dev through these tiers correctly. The `/accept-agentic-healing` command is the thin wrapper for Tier-2 promotion.
+
+---
+
+## File shape — what you produce
 
 ```yaml
 # yaml-language-server: $schema=../../../../json-schemas/flow-test.json
@@ -82,62 +347,33 @@ settings:
   runs: 1
   trace: on-failure
   cache_actions: true
-  max_steps: <pick an upper bound for the LLM tool-pick loop, see below>
+  max_steps: <pick an upper bound; default 30 is usually fine>
+  backend_mode: <local | cloud>      # default 'local'; only set explicitly for cloud flows
 
 setup:
-  - <fixture command>      # only commands the README documents
-  - "goto:/<path>"          # land on the page where the case starts
+  - <documented setup command>       # see the 7-item table above
+  - "goto:/<path>"                    # land on the start page
 
 cases:
   - name: <descriptive case name>
     tags: [<surface>, critical?, regression?]
     steps:
       - act: |
-          <one logical user action, with explicit selectors when they exist>
-      - wait_for: <streaming_complete | network_idle | selector:<sel>>
-      # ...one act:/wait_for: pair per logical action
+          <one logical user action, with explicit selectors>
+        cache_scope: shared          # only if the step text is verbatim from canonical-prompts.md
+      - wait_for: <documented primitive>
     expect:
-      - assert: <deterministic claim — selector visibility, attribute, text>
-      - judge:  <one sentence covering the dev's stated success criterion>
+      - assert: <deterministic claim>
+      - judge:  <one sentence covering the success criterion>
 ```
 
-### Authoring rules — these matter for cost and reliability
-
-**`target:`.** Pick the README's documented enum. Don't invent values. The target is a documentation hint only — it doesn't change what tools the runner exposes — but using the right one keeps the suite organised.
-
-**`settings.cache_actions`.** Default to `true`. **Flip to `false` only if a step types a value that must vary per run** (a real secret, a per-run timestamp, an unguessable value). Cached replay is deterministic, so a recorded `browser_type` will replay the *exact* original value. If the original value was `${ANTHROPIC_API_KEY}` substituted from env, that's fine — the substitution happens at YAML load time, before caching. If the original value was a hard-coded `sk-ant-real-key`, you've leaked it into the cache JSON. **Never put real secrets in the YAML.** Use `${VAR}` substitution if the README documents it; if not, treat that as a future capability and avoid caching anything secret-bearing for now.
-
-**`settings.max_steps`.** Upper bound on the LLM tool-pick loop per *step* (the README defines this — verify the current default, today 30). Most steps converge in 1–6 iterations. A flow whose `act:` is well-anchored with selectors will never hit `max_steps`; a vague flow that exceeds it is a signal that the prompt needs to be more concrete, not that the bound needs raising. Keep at the default unless you have a reason.
-
-**`setup:`.** Use only the fixture commands the README documents at runtime. Today: `reset_test_file` (wipes `demo_project/test.sql`) and `goto:/<path>` (relative to `OXY_BASE_URL`). The README's followups doc may list future fixtures (`seed_org`, `seed_blank_workspace`, `seed_demo_workspace`, `seed_llm_key`, `goto_workspace`, …) — if those land, prefer them over driving prelude state through `act:` steps. **Do not invent fixture commands the README doesn't list.**
-
-**`act:` text.**
-- Use explicit selectors whenever they exist: `Click [data-testid=agent-selector-button]`. The model uses them verbatim. Grep `web-app/src` for `data-testid="…"` before authoring; if a button you need doesn't have one, mention to the dev that adding a testid is a one-line follow-up that drops cold cost ~5×.
-- Number sub-steps for tightly-coupled actions in one prompt — see the existing `chat-ask.flow.test.yml` for the canonical shape.
-- Disambiguate when the page has duplicates: *"the file editor's Monaco surface, NOT the SQL results pane below"*.
-- Hint at tools when the right primitive is non-obvious (Monaco needs `browser_keyboard_type`, not `browser_type`).
-- Don't write "verify X" steps — verifications belong under `expect:`.
-
-**`wait_for:` placement.** After every `act:` whose post-condition is non-trivial. Pair each user action with a wait that names the gate proving the action worked: a chat submit → `wait_for: streaming_complete`; a navigation → `wait_for: selector:<thing-on-the-new-page>`; a network mutation → `wait_for: network_idle`. Without these gates the flow either flakes (next `act:` runs before the page is ready) or burns LLM iterations as the model figures out the page is mid-transition.
-
-**`wait_for:` primitives.** Use only what the README documents. Today: `streaming_complete`, `network_idle`, `selector:<sel>`. If the README documents a `;timeout_ms=<n>` suffix on selector waits, use it for waits known to take longer than 30s (build phases, long pipelines, agentic runs). If the README does *not* document it, do not write it — it won't parse.
-
-**`expect:` mix.**
-- Use `assert:` for every structural claim: `selector <sel> is visible`, `selector <sel> has attribute <attr>=<value>`, `text "<t>" is visible`, `save button is not visible`. Asserts cost $0.
-- Use `judge:` for the dev's stated success criterion in plain English. Judge calls cost ~$0.002 each on Haiku 4.5. Keep to one judge per case unless the success criterion has multiple independent claims.
-- Never `judge:` something you can `assert:` instead.
-
-**Cross-flow cache reuse.** The action cache key is `sha256(flow_file | case_name | step_index | step_text)`. Verbatim `act:` text shared between two flows shares the cache entry. When you write a step that's similar to one in an existing flow (clicking the agent selector, opening the file tree, etc.), copy the exact wording from the existing flow rather than paraphrasing — it's free cache reuse.
+Filename: `web-app/tests/agentic/flows/<descriptive-kebab-name>.flow.test.yml`. Lower-kebab. Bucket-prefix the stem (`builder-…`, `chat-…`, `threads-…`, `ide-…`, `onboarding-…`) so CI bucketing is unambiguous.
 
 ---
 
-## Self-check (before you hand the file off)
+## Self-check — before handoff
 
-Run these checks. Don't ship broken YAML.
-
-### 1. Parse-check via the runner's loader
-
-The runner's YAML loader is at `web-app/tests/agentic/runner/yaml-loader.ts` (verify the path — the README lists it). It expands `${VAR}` env references at load time, so a missing variable will throw. Set a fake key for the parse-check:
+### 1. Parse-check via the runner's YAML loader
 
 ```bash
 cd web-app
@@ -145,79 +381,80 @@ ANTHROPIC_API_KEY=fake-test-key \
   npx tsx -e "import('./tests/agentic/runner/yaml-loader.ts').then(m => m.loadFlow('tests/agentic/flows/<your-file>.flow.test.yml')).then(f => console.log('parsed:', f.name)).catch(e => { console.error(e); process.exit(1) })"
 ```
 
-If this fails, fix the YAML. Common causes: an unknown `target:` value, a typo'd `wait_for:` primitive, a `setup:` command the loader doesn't recognise, malformed indentation.
-
 ### 2. Schema-check against `json-schemas/flow-test.json`
 
-Use whatever JSON-schema validator the repo already uses (look for an existing `validate-yaml` script, ajv, or a schema-checker in the runner's tests directory). If none exists locally, `npx ajv-cli` is a one-line fallback:
-
 ```bash
-npx ajv-cli@latest validate -s json-schemas/flow-test.json -d web-app/tests/agentic/flows/<your-file>.flow.test.yml
+npx --yes js-yaml web-app/tests/agentic/flows/<your-file>.flow.test.yml > /tmp/flow.json
+npx --yes ajv-cli@latest validate -s json-schemas/flow-test.json -d /tmp/flow.json
 ```
 
-(Convert YAML to JSON in the validator's input form if its CLI requires JSON.)
+### 3. `--dry-run` lint
 
-### 3. Smoke-only mode (optional, on dev's request)
-
-Offer to run the first one or two steps cold to confirm the flow at least reaches the target page. The full run pays a cold cost; a smoke is cheap.
+Run the durability lint and surface findings to the dev:
 
 ```bash
-# from web-app/
-HEADED=1 DEBUG=1 pnpm test:agentic <flow-stem> --no-auto-backend --no-auto-frontend
+cd web-app && pnpm test:agentic --dry-run <flow-stem>
 ```
 
-(Use `/run-agentic-tests` to handle env detection.)
+The lint warns about `text=` only, bare CSS structure selectors, and steps with no selector hint at all. Two ignored warnings is fine for the current canonical flows (file-input id selector + `oxymart` text table-picker are the legitimate ones); more than two means the generated flow has room to improve — add testids / role+name selectors where the lint flagged.
 
-### 4. If any check fails
+### 4. Budget entry
 
-Iterate until the parse + schema checks pass. Don't hand off broken YAML. Show the dev the diff that fixed the failure if it was non-trivial — they may be authoring similar flows by hand and benefit from seeing the gotcha.
+When generating a new flow, append an entry to `web-app/tests/agentic/flows/_budgets.yml` using the defaults table above.
+
+### 5. CI bucket assignment
+
+Tell the dev which bucket the new flow lands in based on its filename prefix. If none matches, surface that they need to add a new bucket entry.
+
+If any check fails, iterate. Don't hand off broken YAML.
 
 ---
 
-## Handoff message — what to tell the dev when you're done
+## Handoff message
 
 After the file is written and self-checks pass:
 
-1. **The exact command to watch the first run.** From `web-app/`:
+1. **Path to the new/updated file** + the bucket it lands in.
+2. **First-run command**:
    ```bash
    HEADED=1 pnpm test:agentic <flow-stem>
    ```
-   With `HEADED=1` they see the browser. `/run-agentic-tests <flow-stem>` runs this with the right env defaults for their backend mode.
-
-2. **Cost expectations.** First run pays cold cost (~$0.05–$0.40 depending on flow length and selector quality). Subsequent runs that don't edit step text replay from the action cache and cost only the judge floor (~$0.002).
-
-3. **Where the artifacts land.**
-   - Markdown report: `web-app/tests/agentic/.results/<iso-timestamp>.md` — readable in a terminal or a GitHub Actions step summary.
-   - Same data programmatically: `web-app/tests/agentic/.results/<iso-timestamp>.json`.
-   - Playwright trace on failure: `web-app/tests/agentic/.traces/<flow>-<case>.zip` — open with `pnpm exec playwright show-trace <path>`.
-
-4. **First-run debugging tip.** If a step burns more than ~6 iterations or the run fails in the first cold pass, open the markdown report and look at `step_debug[].tool_calls` — every wrong selector the model tried is logged. Most fixes are a one-word change to the `act:` prompt (add a `[data-testid=…]` or a disambiguator).
-
-5. **Tell them about the slash commands**:
-   - `/test-feature <description>` — generate a new flow without Q&A.
-   - `/run-agentic-tests <pattern>` — run flows with the right env vars for their detected backend mode.
-   - `/agentic-test-add-case <flow-file> <description>` — extend an existing flow with a new case.
+   Or `/run-agentic-tests <flow-stem>` for the wrapped version. The runner auto-spawns the right backend based on `backend_mode`.
+3. **Cost expectation** vs the budget you wrote into `_budgets.yml`.
+4. **Where artefacts land**:
+   - Markdown report: `web-app/tests/agentic/.results/<ts>.md`
+   - JSON: `web-app/tests/agentic/.results/<ts>.json`
+   - Trace on failure: `web-app/tests/agentic/.traces/<flow>-<case>.zip` — `pnpm exec playwright show-trace <path>`
+5. **Slash commands the dev should know:**
+   - `/test-feature <description>` — create a new flow.
+   - `/agentic-test-add-case <flow> <description>` — extend an existing flow.
+   - `/run-agentic-tests <pattern>` — run with HEADED=1 DEBUG=1.
+   - `/fix-agentic-test <flow-or-bucket>` — triage a failing flow.
+   - `/accept-agentic-healing <flow>` — promote staged Tier-2 healings.
 
 ---
 
 ## Future-proofing — design assumptions that may shift
 
-The bespoke runtime is in active development. The skill must adapt by re-reading the README each invocation, but be aware of these likely evolutions:
+The bespoke runtime is in active development. Re-read the README each invocation. Likely evolutions to watch:
 
-- **More `setup:` fixtures.** `seed_org`, `seed_blank_workspace`, `seed_demo_workspace`, `seed_llm_key`, `goto_workspace` are likely candidates. When they land, prefer them over driving prelude state via `act:` — they're API-fast, deterministic, and don't pollute the action cache.
-- **`${VAR}` substitution.** If the loader supports it, use it for any value that must come from env (API keys, per-environment URLs). Today most flows hard-code values that are safe to commit (the demo project's `test.sql`, the `default` agent, demo questions).
-- **`;timeout_ms=<n>` suffix on `wait_for: selector:<sel>`.** If the README documents it, use it for waits known to exceed 30s (build phases, long pipelines, agentic runs).
-- **Sub-flow includes.** A way to share canonical step sequences across flows. When this lands, factor common preludes (open IDE, navigate to a workspace, etc.) into includes.
-- **New `target:` values, new `wait_for:` primitives.** Read the schema and README on every invocation; do not hard-code the enum.
+- **Bucket layout per (domain, mode)** when cloud-mode coverage lands in `builder` / `ask-agent` / `threads` / `ide`. Today only `onboarding` is cloud-mode.
+- **`cache_scope` collapsing to `shared: true` boolean** since only two values exist today.
+- **Structured shorthand DSL** (`click:` / `type:` / `press:` step kinds that compile to Playwright tool calls without an LLM round-trip) — discussed for ~40–50× cold cost reduction per pure-mechanical step. Not committed.
 
-When the dev asks for something the current README doesn't support, **say so explicitly** and offer a workaround that uses what's documented, rather than inventing syntax that won't parse.
+When the dev asks for something the current README doesn't support, **say so explicitly** and offer a workaround using what's documented.
 
 ---
 
 ## Guardrails
 
-- Never invent `setup:` fixture commands, `wait_for:` primitives, or `assert:` forms the README doesn't document. The loader and judge silently ignore unknowns or throw — either way the flow breaks.
-- Never put real secrets in the YAML. If the dev wants to test something that requires a secret, route the secret through env (and `${VAR}` substitution if available) and set `cache_actions: false` for that flow.
-- Never edit a flow whose name suggests it's actively in use (`chat-ask.flow.test.yml`, `ide-save.flow.test.yml`) when the dev is asking for a *new* flow. Create a new file. Use `/agentic-test-add-case` only when the dev explicitly says "add a case to <existing flow>".
-- Never use `cache_actions: false` as a "make it work" hack. If a flow needs it, it should be because of a real per-run varying value, not because the cache is misbehaving — the cache misbehaving is a runtime bug to file against the runner, not papered over.
-- Never hand off YAML that hasn't passed parse + schema checks.
+- Never invent setup commands, `wait_for:` primitives, `assert:` forms, or CLI flags the README / source doesn't document. The loader and judge throw on unknowns or silently ignore them — either way the flow breaks.
+- Never put real secrets in the YAML. Use `${VAR}` placeholders; ensure the var is in `SECRET_ENV_VARS`.
+- Never edit a flow whose name suggests it's actively in use (`chat-ask`, `ide-save`, `onboarding-blank-workspace`, etc.) when the dev is asking for a *new* flow. Create a new file. Use `/agentic-test-add-case` only when the dev explicitly says so.
+- Never use `cache_actions: false` as a "make it work" hack. Flaky warm-replay is a runtime bug — file it against the runner.
+- Never hand off YAML that hasn't passed parse + schema + dry-run lint.
+- Never auto-promote Tier-2 healing recordings; route the dev to `/accept-agentic-healing` instead.
+
+---
+
+*Last verified against `claude/agentic-tests-v1` HEAD `6030bf4bd55e38a156b289c46b3a4eb25e01f9de` (2026-05-12).*
