@@ -1,0 +1,81 @@
+# Fires a `skills-updated` repository_dispatch at oxy-hq/oxygen-internal
+# whenever a push to `main` touches a file the oxygen-internal builder
+# knowledge module vendors (see
+# https://github.com/oxy-hq/oxygen-internal/blob/main/crates/agentic/builder/knowledge/README.md).
+# The receiving workflow runs its drift detector and opens a reconcile
+# PR if anything has drifted -- typically within seconds of the push.
+#
+# Tightens the loop from "up to a week" (the scheduled scan in
+# oxygen-internal) to "as soon as the push lands". The weekly cron on
+# the other side stays as a safety net in case the dispatch is missed
+# (token expiry, network blip, a push whose path filter we forgot to
+# extend here, etc.).
+#
+# Prerequisite: the Argo GitHub App must be installed on oxy-hq/skills,
+# and the ARGO_APP_CLIENT_ID variable / ARGO_APP_PRIVATE_KEY secret must
+# be reachable from this repo (org-level or repo-level). The minted
+# installation token is scoped to oxygen-internal only.
+
+name: Notify oxygen-internal of skills changes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # The set of files the oxygen-internal knowledge module vendors.
+      # Broad on purpose: the drift script will return cleanly if a
+      # push touches a file no card sources, and broadening here is
+      # cheaper than re-syncing this filter every time a new card is
+      # added downstream.
+      - "skills/**/SKILL.md"
+      - "skills/**/QUICK-REFERENCE.md"
+      - "skills/**/*-template.yml"
+  workflow_dispatch: # manual smoke-test of the dispatch path
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  dispatch:
+    if: github.repository == 'oxy-hq/skills'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/create-github-app-token@v3
+        name: Create GitHub App Token
+        id: app-token
+        with:
+          client-id: ${{ vars.ARGO_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ARGO_APP_PRIVATE_KEY }}
+          # Mint a token scoped only to oxygen-internal -- the only
+          # thing this workflow needs to write to.
+          owner: oxy-hq
+          repositories: oxygen-internal
+
+      - name: Dispatch skills-updated to oxygen-internal
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          COMPARE_URL: ${{ github.event.compare }}
+        run: |
+          set -euo pipefail
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/oxy-hq/oxygen-internal/dispatches \
+            -f event_type=skills-updated \
+            -f "client_payload[sha]=${SHA}" \
+            -f "client_payload[ref]=${REF}" \
+            -f "client_payload[compare_url]=${COMPARE_URL}"
+
+          {
+            echo "## Dispatched \`skills-updated\` to oxy-hq/oxygen-internal"
+            echo
+            echo "- skills SHA: \`${SHA}\`"
+            echo "- ref: \`${REF}\`"
+            echo "- compare: ${COMPARE_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"
