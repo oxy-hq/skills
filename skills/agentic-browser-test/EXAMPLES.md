@@ -374,18 +374,22 @@ cases:
   - name: open builder via Cmd+I, ask for a new chart, wait for completion
     tags: [builder, app, critical]
     steps:
-      - wait_for: network_idle
+      # Page-state lock — if the LLM drifts off /apps/<id> mid-flow,
+      # this fails fast rather than silently testing the wrong surface.
+      - wait_for: "selector:[data-testid=app-page-root]"
 
       - act: |
           Open the builder dialog and submit a build prompt in one
-          atomic sequence. Do NOT press Meta+i a second time or click
-          outside the dialog — either closes it.
+          atomic sequence. Auto-approve starts OFF in a fresh browser
+          context (localStorage empty → autoApprove === false at mount);
+          one unconditional click flips it ON.
 
           1. browser_press_key "Meta+i". Dialog appears with
              [data-testid=builder-input-textarea] pre-filled with `@insights `.
-          2. If [data-testid=builder-auto-approve-toggle] has
-             `data-state="off"`, browser_click it once to flip ON.
-             Otherwise leave it.
+          2. browser_click [data-testid=builder-auto-approve-toggle]
+             EXACTLY ONCE to flip auto-approve ON. Don't read the
+             toggle's data-state attribute first — it starts OFF in a
+             clean context.
           3. browser_click [data-testid=builder-input-textarea] to focus.
           4. browser_keyboard_type (NOT browser_type) to APPEND:
                "Add a bar chart at the bottom of the dashboard showing

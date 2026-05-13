@@ -51,10 +51,10 @@ and you say something like:
 2. **Picks the right primitives for what you described.**
    - `target:` — chat / ide / threads / onboarding / any.
    - `backend_mode:` — local (default, port 3000) or cloud (port 3001).
-   - `setup:` — the 7 documented fixture commands (`reset_test_file`,
-     `restore_demo_file:<rel>`, `goto:<path>`, `seed_org:<name>`,
-     `seed_blank_workspace:<name>`, `seed_demo_workspace:<_>`,
-     `goto_workspace:<_>`).
+   - `setup:` — the 3 documented fixture commands
+     (`reset_test_file`, `restore_demo_file:<rel>`, `goto:<path>`).
+     None can make a network call; cloud-mode flows drive
+     onboarding through the UI wizard.
    - `act:` — natural-language steps with explicit `[data-testid=…]`
      selectors when they exist (drops cold cost ~5×).
    - `wait_for:` — `streaming_complete` / `network_idle` /
@@ -94,12 +94,17 @@ The skill ships five commands:
 
 ## CI buckets
 
-The `agentic-tests` job in `.github/workflows/ci.yaml` runs flows in
-**5 domain buckets**, not one job per flow:
+The agentic-tests job is a reusable workflow at
+`.github/workflows/agentic-tests.yaml` (called from `ci.yaml` via
+`workflow_call`, also dispatchable standalone with optional
+`flow_bucket` / `oxy_binary_run_id` inputs). A `resolve-matrix`
+setup job emits the bucket matrix as JSON. Flows run in **6 domain
+buckets**, not one job per flow:
 
 | Bucket | Flows in CI | Mode |
 |---|---|---|
 | `builder` | `builder-edits-app`, `builder-rejected-suggestion` | local |
+| `semantic` | `semantic-builder-ask` | local |
 | `ask-agent` | `chat-ask`, `chat-panel-agent-switch` | local |
 | `threads` | `threads-list` | local |
 | `ide` | `ide-save` | local |
@@ -108,13 +113,15 @@ The `agentic-tests` job in `.github/workflows/ci.yaml` runs flows in
 Filename → bucket mapping for new flows:
 
 - `builder-*` → `builder`
+- `semantic-*` → `semantic`
 - `chat-*` → `ask-agent`
 - `threads-*` → `threads`
 - `ide-*` → `ide`
 - `onboarding-*` → `onboarding`
 
-A flow that doesn't match any prefix needs a new bucket entry in the CI
-matrix. The skill surfaces this.
+A flow that doesn't match any prefix needs a new bucket entry in the
+`resolve-matrix` job's inline JSON in `agentic-tests.yaml`. The skill
+surfaces this.
 
 ## Action cache + healing
 

@@ -91,17 +91,13 @@ Only the six state-changing tools persist into the action cache (`tests/agentic/
 | `selector:<sel>[;timeout_ms=<n>]` | Element matching `<sel>` becomes visible. Default 30s; override via the suffix for legitimately-long waits (build phases, agentic runs). |
 | `selector_hidden:<sel>[;timeout_ms=<n>]` | Element matching `<sel>` disappears. Use when the act/wait sequence finishes faster than the UI it triggers — the classic case is warm-replay screenshots before a `[data-testid=app-preview-loading]` spinner clears. |
 
-### Setup commands (7) — authoritative: `fixtures/reset.ts:SetupCommand`
+### Setup commands (3) — authoritative: `fixtures/reset.ts:SetupCommand`
 
 | Command | Mode | Notes |
 |---|---|---|
 | `reset_test_file` | local | Empties `demo_project/test.sql`. Refuses symlinks / paths escaping repo. |
 | `restore_demo_file:<rel>` | local | Reverts `demo_project/<rel>` to `git show HEAD:demo_project/<rel>`. Used by flows that mutate a demo file (e.g. `builder-edits-app` editing `insights.app.yml`) so reruns start from the same canonical state. Refuses paths that escape the repo, contain `..`, or resolve through a symlink. Reads from HEAD without touching the index. |
 | `goto:<path>` | both | Navigate to `<OXY_BASE_URL><path>` before the case starts. |
-| `seed_org:<name>` | cloud | POSTs to `/api/orgs` on the auth-disabled internal port (3001). Stores `org_id` + `org_slug` in seed state. **Restricted to `localhost:3001` / `127.0.0.1:3001`** via `ALLOWED_BASE_URLS` in `fixtures/reset.ts` — any new `seed_*` that calls another host is rejected at code-review. |
-| `seed_blank_workspace:<name>` | cloud | Requires prior `seed_org`. POSTs to `/api/orgs/{org_id}/onboarding/new`. |
-| `seed_demo_workspace:<_>` | cloud | Requires prior `seed_org`. POSTs to `/api/orgs/{org_id}/onboarding/demo` (Demo Workspace with sample agents + DuckDB). The `<_>` arg is ignored. |
-| `goto_workspace:<_>` | cloud | Requires prior `seed_org` + `seed_*_workspace`. Navigates to `/<slug>/workspaces/<uuid>`. Skips the UI prelude. The `<_>` arg is ignored. |
 
 ### Flow settings — authoritative: `json-schemas/flow-test.json`
 
@@ -242,7 +238,7 @@ pnpm test:agentic --scaffold <feature-name> --from <component-path>
 
 These must show up in every authoring + run command. Encoded in `web-app/tests/agentic/README.md`'s top-level policy section.
 
-1. **Read-only against external systems.** Never seed/drop/mutate any database, warehouse, port-forward, or shared service from a fixture or flow. The `seed_*` commands are allowed only because of the `ALLOWED_BASE_URLS` allowlist (`localhost:3001` / `127.0.0.1:3001`). Any proposed `seed_*` that wants to call out is rejected at code-review.
+1. **Read-only against external systems.** Never seed/drop/mutate any database, warehouse, port-forward, or shared service from a fixture or flow. The setup-command surface in `fixtures/reset.ts` is intentionally limited to `goto:`, `reset_test_file`, and `restore_demo_file:` — none of which can make a network call. Cloud-mode flows drive onboarding through the UI wizard rather than API seeding. Any proposed setup command that wants to call out is rejected at code-review.
 2. **Never type secrets as plaintext.** Use `${VAR}` placeholders for any value in `SECRET_ENV_VARS`. Adding a new secret env var requires extending the allowlist.
 3. **Never auto-promote Tier-2 healing recordings.** They stage to `.cache/healing-staging.json`, not `bespoke-actions.json`. Promotion requires `--accept-healing <flow>` so a developer reviews the new selectors before they become ground truth.
 
@@ -252,11 +248,12 @@ These three rules trace back to the 2026-05-06 ClickHouse incident retrospective
 
 ## CI mechanics — what hits the matrix
 
-The `agentic-tests` job in `.github/workflows/ci.yaml` runs flows in **5 domain buckets** (not one job per flow):
+The agentic-tests job is a reusable workflow at `.github/workflows/agentic-tests.yaml` (called from `ci.yaml` via `workflow_call`, also triggerable standalone via `workflow_dispatch` with optional `flow_bucket` and `oxy_binary_run_id` inputs). A small `resolve-matrix` setup job emits the bucket matrix as JSON. Flows are grouped into **6 domain buckets** (not one job per flow):
 
 | Bucket | Flows | Mode | Port |
 |---|---|---|---|
 | `builder` | `builder-edits-app`, `builder-rejected-suggestion` | local | 3000 |
+| `semantic` | `semantic-builder-ask` | local | 3000 |
 | `ask-agent` | `chat-ask`, `chat-panel-agent-switch` | local | 3000 |
 | `threads` | `threads-list` | local | 3000 |
 | `ide` | `ide-save` | local | 3000 |
@@ -264,12 +261,13 @@ The `agentic-tests` job in `.github/workflows/ci.yaml` runs flows in **5 domain 
 
 Filename → bucket mapping for new flows:
 - `builder-*` → `builder`
+- `semantic-*` → `semantic`
 - `chat-*` → `ask-agent`
 - `threads-*` → `threads`
 - `ide-*` → `ide`
 - `onboarding-*` → `onboarding`
 
-If a new flow doesn't match any prefix, surface to the dev: "This needs a new bucket entry in `.github/workflows/ci.yaml` (search for `flow:` under the agentic-tests matrix). Buckets share `backend_mode`, so don't add a cloud-mode flow to a local-mode bucket — split the bucket by mode first."
+If a new flow doesn't match any prefix, surface to the dev: "This needs a new bucket entry in the `resolve-matrix` job's inline JSON in `.github/workflows/agentic-tests.yaml`. Buckets share `backend_mode`, so don't add a cloud-mode flow to a local-mode bucket — split the bucket by mode first. Also add the bucket name to the `flow_bucket` choice list in the workflow_dispatch trigger so dispatch UIs can target it."
 
 **`ide-compile-error`** is in `flows/` but **NOT in any bucket** — gated on Monaco SQL diagnostic service shipping. Don't reference it as a CI-live example.
 

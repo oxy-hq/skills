@@ -16,8 +16,8 @@ web-app/tests/agentic/flows/<descriptive-kebab-name>.flow.test.yml
 ```
 
 Lower-kebab. **Prefix the stem with the bucket it'll land in**:
-`builder-…`, `chat-…`, `threads-…`, `ide-…`, `onboarding-…`. CI bucketing
-keys off this prefix.
+`builder-…`, `semantic-…`, `chat-…`, `threads-…`, `ide-…`,
+`onboarding-…`. CI bucketing keys off this prefix.
 
 Always include the `# yaml-language-server: $schema=` header pointing at
 `json-schemas/flow-test.json` — IDE autocomplete and inline diagnostics
@@ -59,19 +59,17 @@ cases:                              # at least one
 
 ---
 
-## `setup:` fixture commands (7)
+## `setup:` fixture commands (3)
 
 Authoritative: `web-app/tests/agentic/fixtures/reset.ts:SetupCommand`.
 
 | Command | Mode | Notes |
 |---|---|---|
 | `reset_test_file` | local | Empties `demo_project/test.sql`. Symlink-safe. |
-| `restore_demo_file:<rel>` | local | Reverts `demo_project/<rel>` to `git show HEAD:demo_project/<rel>`. Used by flows that mutate demo files (builder editing `insights.app.yml`). Refuses paths escaping repo, containing `..`, or resolving through symlinks. |
+| `restore_demo_file:<rel>` | local | Reverts `demo_project/<rel>` to `git show HEAD:demo_project/<rel>`. Used by flows that mutate demo files (builder editing `insights.app.yml`, semantic-builder-ask editing `sales_semantics/views/oxymart.view.yml`). Refuses paths escaping repo, containing `..`, or resolving through symlinks. |
 | `goto:<path>` | both | Navigate to `<OXY_BASE_URL><path>`. |
-| `seed_org:<name>` | cloud | POST `/api/orgs` on the auth-disabled internal port (3001). Restricted to `localhost:3001` / `127.0.0.1:3001` via `ALLOWED_BASE_URLS`. |
-| `seed_blank_workspace:<name>` | cloud | Requires prior `seed_org`. POST `/api/orgs/{org_id}/onboarding/new`. |
-| `seed_demo_workspace:<_>` | cloud | Requires prior `seed_org`. POST `/api/orgs/{org_id}/onboarding/demo`. Arg ignored. |
-| `goto_workspace:<_>` | cloud | Requires prior `seed_org` + `seed_*_workspace`. Navigates to `/<slug>/workspaces/<uuid>`. Arg ignored. Bypasses the UI prelude. |
+
+The set is intentionally minimal — none of these can make a network call. Cloud-mode flows drive onboarding through the UI wizard rather than API seeding.
 
 **Don't invent commands.** Unknown setup commands throw at load time.
 
@@ -297,12 +295,16 @@ room to improve.
 
 ## CI mechanics
 
-The `agentic-tests` matrix in `.github/workflows/ci.yaml` runs flows in **5
-domain buckets** (not one job per flow):
+The agentic-tests job is a reusable workflow at
+`.github/workflows/agentic-tests.yaml` (called from `ci.yaml` via
+`workflow_call`, also dispatchable standalone). A `resolve-matrix`
+setup job emits the matrix as JSON. Flows run in **6 domain
+buckets** (not one job per flow):
 
 | Bucket | Flows | Mode |
 |---|---|---|
 | `builder` | `builder-edits-app`, `builder-rejected-suggestion` | local |
+| `semantic` | `semantic-builder-ask` | local |
 | `ask-agent` | `chat-ask`, `chat-panel-agent-switch` | local |
 | `threads` | `threads-list` | local |
 | `ide` | `ide-save` | local |
@@ -399,7 +401,7 @@ when adding a new flow:
 
 ## Hard rules — red lines
 
-1. **Read-only against external systems.** Flows / fixtures must never seed, drop, or mutate any DB, warehouse, port-forward, or shared service. `seed_*` is allowed only because `ALLOWED_BASE_URLS` restricts it to `localhost:3001` / `127.0.0.1:3001`.
+1. **Read-only against external systems.** Flows / fixtures must never seed, drop, or mutate any DB, warehouse, port-forward, or shared service. The setup-command surface (`fixtures/reset.ts`) is intentionally limited to `goto:`, `reset_test_file`, and `restore_demo_file:` — none of which can make a network call. Any proposed setup command that wants to call out is rejected at code review.
 2. **Never type secrets as plaintext.** Use `${VAR}` placeholders from `SECRET_ENV_VARS`. Adding a new secret requires extending the allowlist.
 3. **Never auto-promote Tier-2 healing.** Promotion is gated on `--accept-healing <flow>` so a human reviews the new selectors.
 
