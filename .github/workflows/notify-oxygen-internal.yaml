@@ -38,7 +38,6 @@ permissions:
 
 jobs:
   dispatch:
-    if: github.repository == 'oxy-hq/skills'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -54,24 +53,20 @@ jobs:
           repositories: oxygen-internal
 
       - name: Dispatch skills-updated to oxygen-internal
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: oxy-hq/oxygen-internal
+          event-type: skills-updated
+          client-payload: |-
+            {"sha": "${{ github.sha }}", "ref": "${{ github.ref }}", "compare_url": "${{ github.event.compare }}"}
+
+      - name: Surface dispatch context in job summary
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SHA: ${{ github.sha }}
           REF: ${{ github.ref }}
           COMPARE_URL: ${{ github.event.compare }}
         run: |
-          set -euo pipefail
-
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/oxy-hq/oxygen-internal/dispatches \
-            -f event_type=skills-updated \
-            -f "client_payload[sha]=${SHA}" \
-            -f "client_payload[ref]=${REF}" \
-            -f "client_payload[compare_url]=${COMPARE_URL}"
-
           {
             echo "## Dispatched \`skills-updated\` to oxy-hq/oxygen-internal"
             echo
