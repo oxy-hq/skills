@@ -19,7 +19,8 @@ oxy-app-builder/
 ├── README.md             # This file
 ├── QUICK-REFERENCE.md    # Schema cheat sheet
 └── templates/
-    └── (example templates)
+    ├── simple-dashboard.app.yml          # Static multi-chart dashboard
+    └── dashboard-with-controls.app.yml   # Interactive controls + row layout
 ```
 
 ## When Claude Uses This Skill
@@ -66,6 +67,16 @@ display:
 - **Bar Charts** - Category comparisons
 - **Pie Charts** - Distribution views
 - **Markdown** - Rich text with templating
+- **Rows** - Side-by-side layout of multiple displays
+
+### Interactive Controls
+Dashboards can include controls that re-run tasks live when changed:
+- **Select** - Dropdown (static `options` or data-driven via `source`)
+- **Date** - Date picker
+- **Toggle** - On/off switch
+
+Control values are injected into task SQL with `{{ controls.<name> }}` Jinja.
+See `dashboard-with-controls.app.yml` for a complete example.
 
 ## Usage Examples
 
@@ -124,6 +135,8 @@ Note: Apps are rendered through the Oxy web UI (`oxy start --enterprise`), not v
 | `bar_chart` | Comparing categories |
 | `pie_chart` | Showing proportions |
 | `markdown` | Headers, text, AI-generated content |
+| `row` | Placing displays side by side |
+| `control` | Interactive filter widget (select/date/toggle) |
 
 ## Documentation
 

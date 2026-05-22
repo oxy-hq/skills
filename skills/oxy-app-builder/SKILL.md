@@ -1,6 +1,6 @@
 ---
 name: oxy-app-builder
-description: Build and edit Oxy data app YAML files (*.app.yml) that visualize data through tasks and displays. Use when users ask to create dashboards, data apps, reports, or interactive analytics interfaces. Helps define SQL/workflow/agent tasks and render outputs as tables, charts, and markdown.
+description: Build and edit Oxy data app YAML files (*.app.yml) that visualize data through tasks and displays. Use when users ask to create dashboards, data apps, reports, interactive analytics interfaces, or to add filters/dropdowns/date pickers/controls to an app. Helps define SQL/workflow/agent tasks, interactive controls, and render outputs as tables, charts, and markdown.
 ---
 
 # Oxy App Builder
@@ -23,6 +23,14 @@ name: app_name                # snake_case identifier
 description: |                # Multi-line description
   What this app does...
 
+# Optional: interactive controls (dropdowns, date pickers, toggles).
+# See "## Interactive Controls" below. May also be declared inline in `display:`.
+controls:
+  - name: region
+    type: select
+    options: [All, North, South]
+    default: "All"
+
 # Required: Array of tasks (min 1)
 tasks:
   - name: task_name           # Unique, snake_case
@@ -37,6 +45,10 @@ display:
     title: "Results"
     data: task_name           # Reference task by name
 ```
+
+Only these top-level keys are accepted (`AppConfig` uses `deny_unknown_fields`):
+`name`, `title`, `description`, `controls`, `tasks`, `display`, `published`.
+Any other top-level key fails validation.
 
 ## Task Types
 
@@ -164,6 +176,26 @@ With title:
   value: market_share          # Value column
 ```
 
+### row - Side-by-Side Layout
+Render multiple displays in one horizontal row:
+```yaml
+- type: row
+  columns: 2                   # Optional; defaults to the number of children. Must be >= 1.
+  children:
+    - type: bar_chart
+      title: "Revenue by Category"
+      data: by_category
+      x: category
+      y: revenue
+    - type: pie_chart
+      title: "Revenue by Region"
+      data: by_region
+      name: region
+      value: revenue
+```
+`children` is a list of display blocks (charts, tables, markdown, or `control`
+blocks). Use rows to place KPI tables or paired charts next to each other.
+
 ### Chart column gotchas
 
 **Time-dimension granularity suffix.** When a `semantic_query` task uses
@@ -215,6 +247,201 @@ Two ways to surface a human-readable label instead:
 If neither path is available (no name field exists in any related view),
 fall back to the FK but warn in the markdown header that rows are keyed
 by ID — never silently render UUIDs as a chart axis.
+
+## Interactive Controls
+
+Controls are interactive widgets (dropdowns, date pickers, toggles) rendered as
+a bar above the dashboard. When the user changes a control, every task whose SQL
+references that control re-runs and the charts/tables update live. Control values
+reach task SQL through Jinja: `{{ controls.<name> }}`.
+
+### Three control types
+
+| Widget kind | Renders as     | Value type            | Use for                     |
+| ----------- | -------------- | --------------------- | --------------------------- |
+| `select`    | Dropdown       | string                | Pick one option from a list |
+| `date`      | Date picker    | string `YYYY-MM-DD`   | Pick a date                 |
+| `toggle`    | On/off switch  | boolean               | Yes/no filters              |
+
+### Declaring controls — two forms
+
+There are two equivalent places to declare a control. **Prefer the inline form** —
+it is what the canonical Oxy demo apps use.
+
+**1. Inline in the `display:` list (recommended).** Add `- type: control` blocks,
+normally at the top of `display:` so they render as a control bar above the charts:
+
+```yaml
+display:
+  - type: control
+    name: region            # referenced in SQL as {{ controls.region }}
+    control_type: select    # <-- control_type, NOT type
+    label: Region           # shown next to the widget
+    options: [All, North, South, East, West]
+    default: "All"
+
+  - type: control
+    name: start_date
+    control_type: date
+    label: From Date
+    default: "2024-01-01"
+
+  - type: control
+    name: holidays_only
+    control_type: toggle
+    label: Holidays Only
+    default: false
+  # ...markdown / charts / tables follow
+```
+
+> **CRITICAL GOTCHA — the #1 controls mistake.** Inside a `- type: control`
+> block, the widget kind is set with the key **`control_type:`**, *not* `type:`.
+> The `type:` key is already consumed by the display discriminant (`type: control`).
+> Writing `type: select` inside a `- type: control` block is invalid.
+
+**2. Top-level `controls:` array (alternative).** A sibling of `tasks:` and
+`display:`. Here each entry uses plain `type:` for the widget kind:
+
+```yaml
+controls:
+  - name: region
+    type: select            # <-- plain `type:` in the top-level array
+    label: Region
+    options: [All, North, South, East, West]
+    default: "All"
+
+tasks: [...]
+display: [...]
+```
+
+Pick **one** form per app. The two are merged at load time — declaring the same
+control in both places duplicates the widget.
+
+### Control fields
+
+| Field          | Required | Applies to | Notes                                                                          |
+| -------------- | -------- | ---------- | ------------------------------------------------------------------------------ |
+| `name`         | yes      | all        | Identifier, referenced as `{{ controls.<name> }}`. snake_case.                 |
+| `control_type` | yes      | inline     | `select` \| `date` \| `toggle`. (Top-level array uses `type:` instead.)        |
+| `label`        | no       | all        | Human label next to the widget. Defaults to `name`.                            |
+| `default`      | no       | all        | Initial value. Quote strings; toggle default is `true`/`false`. May use Jinja. |
+| `options`      | no       | select     | Static list of dropdown choices.                                               |
+| `source`       | no       | select     | Name of a task whose **first column** populates the dropdown dynamically.      |
+
+### Populating a `select` from data (`source`)
+
+Set `source:` to a task name; the dropdown is filled from that task's first
+column. Add a task that returns the distinct values — and include any sentinel
+row (like `All`) yourself:
+
+```yaml
+tasks:
+  - name: store_list          # feeds the dropdown
+    type: execute_sql
+    database: local
+    sql_query: |
+      SELECT 'All' AS Store
+      UNION ALL
+      SELECT DISTINCT CAST(Store AS VARCHAR) FROM 'sales.csv' ORDER BY Store
+
+display:
+  - type: control
+    name: store
+    control_type: select
+    label: Store
+    source: store_list        # use `source:`, not `options:`
+    default: "All"
+```
+
+Use `source:` OR `options:`, not both.
+
+### Referencing controls in SQL
+
+Inject control values into any `execute_sql` task with Jinja:
+
+```sql
+SELECT region, SUM(revenue) AS total
+FROM sales
+WHERE sale_date >= {{ controls.start_date | sqlquote }}
+  AND ({{ controls.region | sqlquote }} = 'All' OR region = {{ controls.region | sqlquote }})
+  {% if controls.holidays_only %}AND period = 'Holiday'{% endif %}
+GROUP BY region
+```
+
+Rules — this is where the agent goes wrong:
+
+1. **Always pipe string/date values through `| sqlquote`.** It wraps the value in
+   single quotes and escapes embedded quotes (`O'Brien` → `'O''Brien'`).
+2. **Never add your own quotes around a `sqlquote` value.**
+   `'{{ controls.x | sqlquote }}'` produces `''value''` — broken SQL. `sqlquote`
+   already supplies the surrounding quotes.
+3. **Optional-filter idiom.** A `select` can't be empty, so use an `All` sentinel:
+   `({{ controls.x | sqlquote }} = 'All' OR col = {{ controls.x | sqlquote }})`.
+   Include `All` in `options:` or in the `source` query.
+4. **Toggle filters go inside an `{% if %}` block:**
+   `{% if controls.flag %}AND ...{% endif %}` — the body is included only when on.
+5. **Date values are strings.** Compare against date columns directly
+   (`col >= {{ controls.d | sqlquote }}`) or cast explicitly
+   (`TRY_CAST({{ controls.d | sqlquote }} AS DATE)`).
+
+### Supported Jinja is intentionally minimal
+
+Client-mode tasks (the default) re-run in the browser's DuckDB WASM engine, which
+understands **only these four Jinja forms**:
+
+- `{{ controls.x }}` — raw substitution
+- `{{ controls.x | sqlquote }}` — quoted SQL string literal
+- `{{ controls.x | default('v') }}` — substitution with fallback
+- `{% if controls.x %}...{% endif %}` — truthy-only conditional
+
+Anything else — `{% for %}` loops, `{% if a == b %}` comparisons, `{% else %}` /
+`{% elif %}`, other filters — is **not supported** and breaks the live re-run.
+Keep control templating to those four forms; put comparison logic in SQL
+(`CASE`, `OR`), not in Jinja.
+
+`default:` and `options:` values may use Jinja evaluated once at app load — most
+usefully `now()`:
+
+```yaml
+  - type: control
+    name: year
+    control_type: select
+    options: ["All", "{{ now(fmt='%Y') }}", "{{ now(fmt='%Y') | int - 1 }}"]
+    default: "All"
+```
+
+### Task execution mode (`mode`)
+
+Every task takes an optional `mode:` — `client` (default) or `server` — that
+controls how it re-runs when a control changes:
+
+- **`client`** — the browser re-runs the SQL in DuckDB WASM. Fast, no server
+  round-trip. Works only for `execute_sql` tasks with an inline `sql_query`
+  against a **local DuckDB** `database` (CSV/Parquet sources).
+- **`server`** — the server re-executes the task. Required for tasks that query
+  an external warehouse (`postgres`, `clickhouse`, `bigquery`, Snowflake), use
+  `sql_file:`, or are `workflow` / `semantic_query` / `agent` tasks.
+
+```yaml
+tasks:
+  - name: revenue
+    type: execute_sql
+    database: clickhouse
+    mode: server            # external DB -> must be server
+    sql_query: |
+      SELECT ... WHERE store = {{ controls.store | sqlquote }}
+```
+
+Tasks against non-local databases are forced to server mode regardless of the
+YAML, so **when in doubt set `mode: server`** — it always works. For local-DuckDB
+apps, leave `mode` unset (it defaults to `client`).
+
+### Controls validation note
+
+`oxy validate` checks control *structure* only. It does **not** verify that a
+`{{ controls.x }}` reference matches a declared control, or that `source:` names
+a real task — those fail only at runtime. After adding controls, smoke-test the
+app in the UI and change each control to confirm dependent tasks re-run.
 
 ## SQL dialect notes
 
@@ -529,6 +756,64 @@ display:
     content: "{{insights}}"
 ```
 
+### Pattern 5: Interactive Dashboard with Controls
+```yaml
+name: sales_dashboard
+
+tasks:
+  # Feeds the region dropdown — first column becomes the options.
+  - name: region_list
+    type: execute_sql
+    database: local
+    sql_query: |
+      SELECT 'All' AS region
+      UNION ALL
+      SELECT DISTINCT region FROM sales ORDER BY region
+
+  - name: revenue_by_category
+    type: execute_sql
+    database: local
+    sql_query: |
+      SELECT category, SUM(revenue) AS total_revenue
+      FROM sales
+      WHERE sale_date >= {{ controls.start_date | sqlquote }}
+        AND ({{ controls.region | sqlquote }} = 'All'
+             OR region = {{ controls.region | sqlquote }})
+        {% if controls.holidays_only %}AND period = 'Holiday'{% endif %}
+      GROUP BY category
+      ORDER BY total_revenue DESC
+
+display:
+  # Controls render as a bar at the top. Inline blocks use `control_type:`.
+  - type: control
+    name: region
+    control_type: select
+    label: Region
+    source: region_list
+    default: "All"
+
+  - type: control
+    name: start_date
+    control_type: date
+    label: From Date
+    default: "2024-01-01"
+
+  - type: control
+    name: holidays_only
+    control_type: toggle
+    label: Holidays Only
+    default: false
+
+  - type: bar_chart
+    title: "Revenue by Category"
+    data: revenue_by_category
+    x: category
+    y: total_revenue
+```
+
+See `templates/dashboard-with-controls.app.yml` for the full version with a
+`row` layout.
+
 ## Best Practices
 
 ### Task Design
@@ -579,6 +864,11 @@ Then verify:
 - [ ] All display `data` fields reference valid task names
 - [ ] Chart x/y/series/name/value fields match actual output columns
 - [ ] SQL is syntactically correct for the target database
+- [ ] Inline `- type: control` blocks use `control_type:` (not `type:`)
+- [ ] Every `{{ controls.x }}` reference matches a declared control `name`
+- [ ] String/date controls in SQL use `| sqlquote` with no extra surrounding quotes
+- [ ] Each control `source:` names a real task; control-only Jinja stays within the four supported forms
+- [ ] Tasks referencing controls against non-local databases set `mode: server`
 
 ## Commands
 
