@@ -114,6 +114,45 @@ oxy semantic-engine --dev-mode
   expr: "CORR(temperature, sales)"
 ```
 
+## Pre-Aggregations (Rollups)
+
+Optional materialized partial aggregates served from local Parquet instead of
+the warehouse. Add to a view file; requires a top-level `pre_aggregations:`
+block in `config.yml` for the refresh worker.
+
+```yaml
+# In a .view.yml:
+refresh_key:                 # view-level default for all rollups
+  every: "1h"                # exactly one of `every` or `sql`
+
+pre_aggregations:
+  - name: orders_by_month
+    dimensions: [order_status]      # view dimension names, not columns
+    measures: [total_orders, total_order_value]
+    time_dimension: order_date      # a date/datetime dimension
+    granularity: month              # second|minute|hour|day|week|month|quarter|year
+    refresh_key:                    # optional per-rollup override
+      sql: "SELECT MAX(updated_at) FROM orders"
+```
+
+```yaml
+# In config.yml (enables the background refresh worker):
+pre_aggregations:
+  schema: AIRLAYER           # default: AIRLAYER
+  database: local            # default: each view's own datasource
+  refresh_worker:
+    enabled: true
+    heartbeat: "30s"
+    renewal_threshold: "120s"
+```
+
+**Coverage rules** — a rollup serves a query only if it covers all requested
+dimensions, measures, and filter dimensions, the time dimension matches, and
+the requested granularity is the same or coarser than the rollup's.
+`custom` / `median` / `number` measures never roll up. With no
+`pre_aggregations:` block, a default rollup (all dims × all measures, `day`)
+is generated.
+
 ## Topic Default Filters
 
 ```yaml
