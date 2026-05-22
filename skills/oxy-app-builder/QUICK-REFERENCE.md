@@ -27,7 +27,8 @@ display:                      # REQUIRED: min 1 display
 - name: task_name
   type: execute_sql
   database: clickhouse        # clickhouse | postgres | bigquery | local
-  sql_query: |                # Inline SQL
+  mode: client                # Optional: client (default) | server. See "Task mode" below.
+  sql_query: |                # Inline SQL — may contain {{ controls.x }} Jinja
     SELECT * FROM table
 ```
 
@@ -148,6 +149,90 @@ With title:
   name: column_name           # REQUIRED: category/label column
   value: column_name          # REQUIRED: numeric value column
 ```
+
+### row
+
+```yaml
+- type: row
+  columns: 2                  # Optional: equal-width column count (>= 1)
+  children:                   # REQUIRED: list of display blocks
+    - type: bar_chart
+      data: task_a
+      x: cat
+      y: val
+    - type: pie_chart
+      data: task_b
+      name: cat
+      value: val
+```
+
+## Interactive Controls
+
+Interactive widgets that re-run dependent tasks when changed. Values reach task
+SQL via Jinja: `{{ controls.<name> }}`.
+
+### Declaring controls — two forms
+
+**Inline in `display:` (recommended)** — note the `control_type:` key:
+
+```yaml
+display:
+  - type: control             # display discriminant
+    name: region              # -> {{ controls.region }}
+    control_type: select      # WIDGET KIND: control_type, NOT type
+    label: Region
+    options: [All, North, South]
+    default: "All"
+```
+
+**Top-level `controls:` array** — here the widget kind uses plain `type:`:
+
+```yaml
+controls:
+  - name: region
+    type: select              # plain `type:` in the top-level array
+    label: Region
+    options: [All, North, South]
+    default: "All"
+```
+
+Use one form per app; do not declare the same control in both.
+
+### Control fields
+
+| Field          | Required | Notes                                                            |
+| -------------- | -------- | ---------------------------------------------------------------- |
+| `name`         | yes      | snake_case; referenced as `{{ controls.<name> }}`               |
+| `control_type` | yes      | `select` \| `date` \| `toggle` (top-level array uses `type:`)    |
+| `label`        | no       | UI label; defaults to `name`                                     |
+| `default`      | no       | Initial value; quote strings; toggle uses `true`/`false`         |
+| `options`      | no       | `select` only — static choice list                              |
+| `source`       | no       | `select` only — task name; its first column fills the dropdown   |
+
+### Control types
+
+| Kind     | Widget      | Value                | SQL usage                                          |
+| -------- | ----------- | -------------------- | -------------------------------------------------- |
+| `select` | Dropdown    | string               | `col = {{ controls.x \| sqlquote }}`               |
+| `date`   | Date picker | string `YYYY-MM-DD`  | `d >= {{ controls.start \| sqlquote }}`            |
+| `toggle` | On/off      | boolean              | `{% if controls.flag %}AND ...{% endif %}`         |
+
+### SQL templating rules
+
+- Always pipe strings/dates through `| sqlquote` — it adds the quotes and escapes.
+- Never wrap a `sqlquote` value in your own quotes (`'{{ ... | sqlquote }}'` is broken).
+- Optional filter: `({{ controls.x | sqlquote }} = 'All' OR col = {{ controls.x | sqlquote }})`.
+- Client-mode tasks support ONLY: `{{ x }}`, `{{ x | sqlquote }}`,
+  `{{ x | default('v') }}`, `{% if x %}...{% endif %}`. No loops, comparisons, `else`.
+
+### Task mode
+
+| `mode`            | Re-runs on              | Use when                                              |
+| ----------------- | ----------------------- | ----------------------------------------------------- |
+| `client` (default)| Browser DuckDB WASM     | `execute_sql` + inline `sql_query` + local DuckDB     |
+| `server`          | Server                  | External DB, `sql_file:`, workflow/semantic/agent     |
+
+When in doubt use `mode: server` — non-local databases are forced to it anyway.
 
 ## SQL Dialect Reference
 
@@ -497,3 +582,7 @@ Then verify:
 - [ ] SQL is valid for target database
 - [ ] YAML uses spaces (not tabs) for indentation
 - [ ] Strings with special characters are quoted
+- [ ] Inline `- type: control` blocks use `control_type:` (not `type:`)
+- [ ] Every `{{ controls.x }}` matches a declared control `name`
+- [ ] Control strings/dates in SQL use `| sqlquote`, no extra quotes
+- [ ] Tasks referencing controls on non-local databases set `mode: server`

@@ -1,0 +1,113 @@
+# Dashboard With Interactive Controls — Template
+# Copy and customize. Demonstrates all three control types, a data-driven
+# dropdown (`source`), row layout, and control values injected into SQL.
+#
+# Customize:
+# - Change `database` and the table/file names in each sql_query
+# - Adjust control names, labels, and defaults
+# - For an external warehouse (postgres/clickhouse/bigquery), set `mode: server`
+#   on every task that references {{ controls.* }}
+
+name: sales_dashboard
+
+description: |
+  Sales dashboard filtered live by region, start date, and a holidays-only
+  toggle. Every chart and table re-runs when a control changes.
+
+tasks:
+  # Feeds the `region` dropdown. First column becomes the option list.
+  # Include the 'All' sentinel row here so the filter can be cleared.
+  - name: region_list
+    type: execute_sql
+    database: local              # local DuckDB -> tasks can run client-side
+    sql_query: |
+      SELECT 'All' AS region
+      UNION ALL
+      SELECT DISTINCT region FROM sales ORDER BY region
+
+  - name: revenue_by_category
+    type: execute_sql
+    database: local
+    sql_query: |
+      SELECT category, SUM(revenue) AS total_revenue
+      FROM sales
+      WHERE sale_date >= {{ controls.start_date | sqlquote }}
+        AND ({{ controls.region | sqlquote }} = 'All'
+             OR region = {{ controls.region | sqlquote }})
+        {% if controls.holidays_only %}AND period = 'Holiday'{% endif %}
+      GROUP BY category
+      ORDER BY total_revenue DESC
+
+  - name: revenue_by_region
+    type: execute_sql
+    database: local
+    sql_query: |
+      SELECT region, SUM(revenue) AS total_revenue
+      FROM sales
+      WHERE sale_date >= {{ controls.start_date | sqlquote }}
+        AND ({{ controls.region | sqlquote }} = 'All'
+             OR region = {{ controls.region | sqlquote }})
+        {% if controls.holidays_only %}AND period = 'Holiday'{% endif %}
+      GROUP BY region
+      ORDER BY total_revenue DESC
+
+  - name: sales_detail
+    type: execute_sql
+    database: local
+    sql_query: |
+      SELECT region, category, period, sale_date, revenue
+      FROM sales
+      WHERE sale_date >= {{ controls.start_date | sqlquote }}
+        AND ({{ controls.region | sqlquote }} = 'All'
+             OR region = {{ controls.region | sqlquote }})
+        {% if controls.holidays_only %}AND period = 'Holiday'{% endif %}
+      ORDER BY sale_date DESC
+
+display:
+  # --- Controls bar: inline `- type: control` blocks at the top ---
+  # NOTE: the widget kind uses `control_type:`, NOT `type:`.
+  - type: control
+    name: region
+    control_type: select
+    label: Region
+    source: region_list          # data-driven dropdown (vs static `options:`)
+    default: "All"
+
+  - type: control
+    name: start_date
+    control_type: date
+    label: From Date
+    default: "2024-01-01"
+
+  - type: control
+    name: holidays_only
+    control_type: toggle
+    label: Holidays Only
+    default: false
+
+  - type: markdown
+    content: |
+      # Sales Dashboard
+
+      Use the controls above to filter by **region**, **start date**, and
+      **holiday periods**. Charts and tables update automatically.
+
+  # --- Two charts side by side ---
+  - type: row
+    columns: 2
+    children:
+      - type: bar_chart
+        title: Revenue by Category
+        data: revenue_by_category
+        x: category
+        y: total_revenue
+
+      - type: pie_chart
+        title: Revenue by Region
+        data: revenue_by_region
+        name: region
+        value: total_revenue
+
+  - type: table
+    title: Filtered Sales Detail
+    data: sales_detail
