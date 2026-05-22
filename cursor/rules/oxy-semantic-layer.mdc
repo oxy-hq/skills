@@ -10,10 +10,10 @@ Build and maintain Oxy semantic layer files (views and topics) that enable busin
 
 ## Core Workflow
 
-1. **Analyze schemas**: Read `.databases/` directory to understand table structures
+1. **Analyze schemas**: Read `semantics.yml` (produced by `oxy sync`) to understand table structures. If a legacy `.databases/` directory exists, read that instead.
 2. **Create views**: Build `semantics/views/*.view.yml` files with entities, dimensions, and measures
 3. **Create topics**: Build `semantics/topics/*.topic.yml` files to organize views
-4. **Validate**: Run `oxy validate` then `oxy build` to check syntax and compilation
+4. **Validate**: Run `oxy build` to check syntax and compilation (do NOT use `oxy validate` on view/topic files)
 5. **Test**: Use `oxy semantic-engine --dev-mode` to verify queries work
 
 ## View File Structure
@@ -161,9 +161,14 @@ dimensions:
     type: boolean
     description: "Whether date is a holiday"
     expr: is_holiday
-    samples: [true, false]
+    samples: ["true", "false"]
     synonyms: ["holiday", "holiday flag"]
 ```
+
+> `samples` is **always a list of strings**, even for `boolean` and `number`
+> dimensions. Use `samples: ["true", "false"]` and `samples: ["129.99"]`, never
+> bare literals like `[true, false]` — bare booleans/numbers fail YAML
+> deserialization and break the entire semantic layer load.
 
 ## Measure Patterns
 
@@ -226,6 +231,98 @@ measures:
        NULLIF(SUM(CASE WHEN year = 2023 THEN revenue END), 0) * 100
 ```
 
+## Pre-Aggregations (Rollups)
+
+Pre-aggregations ("rollups") are materialized partial aggregates of a view. The
+engine builds them into local Parquet files and serves matching queries from
+the rollup instead of scanning the warehouse. A background worker keeps them
+fresh. Rollups are **optional**; add them to views backing dashboards or
+frequent KPI questions.
+
+### View-level syntax
+
+Add a `pre_aggregations:` list to a `.view.yml`. Each rollup names a subset of
+the view's `dimensions` and `measures`, optionally a `time_dimension` rolled up
+to a `granularity`:
+
+```yaml
+name: orders
+datasource: local
+table: "orders.csv"
+
+# View-level refresh_key — the default for every rollup unless one overrides it.
+refresh_key:
+  every: "1h"
+
+pre_aggregations:
+  - name: orders_by_month
+    dimensions:
+      - order_status
+    measures:
+      - total_orders
+      - total_order_value
+    time_dimension: order_date    # must be a dimension name in this view
+    granularity: month            # second|minute|hour|day|week|month|quarter|year
+
+  - name: orders_summary          # aggregate-only rollup: no dimensions, no time
+    measures:
+      - total_orders
+      - total_order_value
+    refresh_key:                  # per-rollup override of the view-level key
+      every: "6h"
+```
+
+`dimensions` / `measures` reference **names defined in the same view**, never
+raw columns. `time_dimension` references a `date`/`datetime` dimension;
+`granularity` truncates it. A rollup with no `dimensions` and no
+`time_dimension` materializes a single summary row.
+
+### Refresh keys
+
+`refresh_key` decides when a rollup is rebuilt. Set **exactly one** key:
+
+- `every: "1h"` — rebuild on a fixed interval (`30m`, `6h`, `1d`, …).
+- `sql: "SELECT MAX(updated_at) FROM orders"` — rebuild when the SQL result
+  changes. The worker re-runs this against the warehouse every cycle, so keep
+  it cheap.
+
+A view-level `refresh_key` is the default for all of that view's rollups; a
+per-rollup `refresh_key` overrides it for that rollup only.
+
+### When a rollup serves a query
+
+The engine uses a rollup for a query only if the rollup **covers** it: every
+requested dimension and measure is in the rollup, every filtered dimension is
+in `dimensions` or is the `time_dimension`, the time dimension matches, and the
+requested granularity is **the same or coarser** than the rollup's (a `month`
+rollup serves `month`/`quarter`/`year`, not `day`). Otherwise the query falls
+back to warehouse SQL — correct, just not accelerated.
+
+`custom`, `median`, and bare `number` measures are not re-aggregatable — a
+query touching one always falls back to the warehouse. `count`,
+`count_distinct`, `sum`, `average`, `min`, `max` re-aggregate correctly.
+
+With **no** `pre_aggregations:` block, the engine generates one default rollup
+covering all dimensions × all measures at `day` granularity.
+
+### Config
+
+Pre-aggregations need a top-level `pre_aggregations:` block in `config.yml` so
+the background refresh worker runs:
+
+```yaml
+pre_aggregations:
+  schema: AIRLAYER             # warehouse schema for rollup tables (default: AIRLAYER)
+  database: local              # connector for builds (default: each view's datasource)
+  refresh_worker:
+    enabled: true              # set false to disable the worker
+    heartbeat: "30s"           # how often the worker checks staleness
+    renewal_threshold: "120s"  # how long a cached refresh_key result stays valid
+```
+
+All fields are optional; the defaults shown apply when omitted. `oxy build`
+validates rollup definitions along with the rest of the layer.
+
 ## Topic File Structure
 
 Topics organize views by business domain. Best practice: create one topic per view.
@@ -279,7 +376,7 @@ Filters use a nested structure with the operator as a key:
 oxy sync
 ```
 
-Reads database connections from `config.yml` and generates schema files in `.databases/`.
+Reads database connections from `config.yml` and writes schema/dimension data to `semantics.yml` in the project root. Read this file to discover table names and columns. (Older oxy versions wrote to `.databases/` instead — read that if it exists.)
 
 ### Step 2: Analyze Schemas
 
@@ -305,17 +402,18 @@ Create one topic per view to organize by business domain.
 ### Step 5: Validate
 
 ```bash
-# Validate all YAML configs
-oxy validate
-
-# Or validate a single file
-oxy validate --file=semantics/views/my_view.view.yml
-
 # Build/compile the full semantic layer
 oxy build
 ```
 
-Always run `oxy validate` after creating or editing YAML files. Then `oxy build` validates the full semantic layer including entity/dimension/measure references across views, SQL expression syntax, and topic-to-view relationships.
+Always run `oxy build` after creating or editing view or topic files — this is
+a mandatory final step. It validates entity/dimension/measure references across
+views, SQL expression syntax, topic-to-view relationships, and rollup
+definitions.
+
+**Do NOT use `oxy validate` on view or topic files.** `oxy validate` is for
+workflow, agent, and app files only; running it on view/topic files will not
+catch errors and may report misleading results.
 
 ### Step 6: Test
 
@@ -372,6 +470,10 @@ dimensions:
 ### Joins Not Working
 **Error**: Can't query across multiple views
 **Fix**: Use identical entity names across related views, verify entity keys reference the correct dimensions.
+
+### Rollup Not Being Used
+**Symptom**: A query that should be fast still scans the warehouse.
+**Fix**: No rollup *covers* the query — a requested dimension/measure is missing from the rollup, the requested granularity is finer than the stored one, or the query touches a `custom`/`median`/`number` measure. Add the missing members or store the rollup at a finer granularity.
 
 ## Complete View Example
 

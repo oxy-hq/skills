@@ -337,6 +337,112 @@ needed — `expr: <col>` is enough.
   expr: created_at
 ```
 
+## Pre-Aggregations (Rollups)
+
+Pre-aggregations ("rollups") are materialized partial aggregates of a view. The
+semantic engine builds them into local Parquet files and serves matching
+queries from the rollup instead of scanning the warehouse — turning a scan of
+millions of rows into a read of a few hundred. A background worker keeps them
+fresh. Rollups are **optional**; the layer works fine without them. Add them to
+views that back dashboards or frequently-asked KPI questions.
+
+### View-level syntax
+
+Add a `pre_aggregations:` list to a `.view.yml`. Each rollup names a subset of
+the view's `dimensions` and `measures`, optionally a `time_dimension` rolled up
+to a `granularity`:
+
+```yaml
+name: orders
+datasource: local
+table: "orders.csv"
+
+# View-level refresh_key — the default for every rollup unless one overrides it.
+refresh_key:
+  every: "1h"
+
+pre_aggregations:
+  - name: orders_by_month
+    dimensions:
+      - order_status
+    measures:
+      - total_orders
+      - total_order_value
+    time_dimension: order_date    # must be a dimension name in this view
+    granularity: month            # second|minute|hour|day|week|month|quarter|year
+
+  - name: orders_summary          # aggregate-only rollup: no dimensions, no time
+    measures:
+      - total_orders
+      - total_order_value
+    refresh_key:                  # per-rollup override of the view-level key
+      every: "6h"
+```
+
+`dimensions` / `measures` reference **names defined in the same view**, never
+raw columns. `time_dimension` references a `date`/`datetime` dimension;
+`granularity` truncates it. A rollup with no `dimensions` and no
+`time_dimension` materializes a single summary row.
+
+### Refresh keys
+
+`refresh_key` decides when a rollup is rebuilt. Set **exactly one** key:
+
+- `every: "1h"` — rebuild on a fixed interval (`30m`, `6h`, `1d`, …).
+- `sql: "SELECT MAX(updated_at) FROM orders"` — rebuild when the SQL result
+  changes. The worker re-runs this against the warehouse every cycle, so keep
+  it cheap (a `MAX` on an indexed column).
+
+A view-level `refresh_key` is the default for all of that view's rollups; a
+per-rollup `refresh_key` overrides it for that rollup only.
+
+### When a rollup serves a query
+
+The engine uses a rollup for a query only if the rollup **covers** it:
+
+- every requested dimension is in the rollup's `dimensions`
+- every requested measure is in the rollup's `measures`
+- every filtered dimension is in `dimensions` or is the `time_dimension`
+- the time dimension matches, and the requested granularity is **the same or
+  coarser** than the rollup's (a `month` rollup serves `month`/`quarter`/`year`
+  queries, not `day`)
+
+If nothing covers the query, it falls back to warehouse SQL — correct, just not
+accelerated. Design rollups to match the dimension/measure sets your dashboards
+actually request.
+
+**Measures that cannot be rolled up:** `custom`, `median`, and bare `number`
+measures are not re-aggregatable — a query touching one falls back to the
+warehouse even if it is listed in a rollup. `count`, `count_distinct`, `sum`,
+`average`, `min`, and `max` re-aggregate correctly.
+
+> If a view has **no** `pre_aggregations:` block, the engine generates one
+> default rollup covering all dimensions × all measures at `day` granularity.
+> Define explicit rollups to control the grain and avoid an oversized default.
+
+### Config: enabling the build/refresh worker
+
+Pre-aggregations need a top-level `pre_aggregations:` block in `config.yml` so
+the background refresh worker runs:
+
+```yaml
+pre_aggregations:
+  schema: AIRLAYER             # warehouse schema for rollup tables (default: AIRLAYER)
+  database: local              # connector for builds (default: each view's datasource)
+  refresh_worker:
+    enabled: true              # set false to disable the worker
+    heartbeat: "30s"           # how often the worker checks staleness
+    renewal_threshold: "120s"  # how long a cached refresh_key result stays valid
+```
+
+All fields are optional; the defaults shown above apply when omitted.
+
+### Validate
+
+`oxy build` compiles and validates rollup definitions along with the rest of
+the layer — rollup names and dimension/measure/time references are checked
+there. After adding pre-aggregations, run `oxy build` and confirm it passes.
+
 ## Topic File Structure
 
 Topics organize views by business domain. **Best practice: create one topic per view**.
@@ -556,6 +662,18 @@ The semantic layer compiles a date literal that the column type rejects.
 2. Switch the dimension to `type: date` (or `datetime`).
 3. Wrap `expr:` with the appropriate cast from the
    "Date Columns: Detect Format, Then Cast" section above.
+
+### Rollup Not Being Used
+
+**Symptom**: A query that should be fast still scans the warehouse.
+
+**Cause**: No rollup *covers* the query — a requested dimension/measure is
+missing from the rollup, the requested granularity is finer than the stored
+one, or the query touches a `custom` / `median` / `number` measure.
+
+**Fix**: Compare the dashboard's dimension/measure set against the rollup
+definition. Add the missing members, or store the rollup at a finer
+granularity. See "When a rollup serves a query" above.
 
 ## DeepWiki Fallback
 
