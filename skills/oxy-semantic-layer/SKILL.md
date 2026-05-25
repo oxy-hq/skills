@@ -233,9 +233,14 @@ measures:
     synonyms: ["avg order value", "AOV"]
 ```
 
-### Filtered Measures
+### Filtered Measures (conditional aggregation)
 
-Apply conditions to measures using filter expressions:
+To aggregate a field over a **subset** of rows ("sum / average / count X
+**where** Y"), write a typed measure (`sum`, `average`, `count`, …) with `expr`
+plus a `filters:` list. Each filter `expr` is a **raw SQL boolean condition over
+the table's columns** — exactly what you'd put in a `WHERE` clause. This is the
+correct, re-aggregatable pattern for conditional aggregation; do **not** express
+it as a `type: custom` `CASE WHEN` (see the warning below).
 
 ```yaml
 measures:
@@ -244,22 +249,40 @@ measures:
     description: "Revenue during holiday periods only"
     expr: order_amount
     filters:
-      - expr: "{{is_holiday}} = true"
+      - expr: "is_holiday = true"          # raw column condition, like a WHERE clause
 
   - name: completed_orders
     type: count
     description: "Number of completed orders"
     filters:
-      - expr: "{{status}} = 'completed'"
+      - expr: "status = 'completed'"
 
   - name: high_value_orders
     type: count
     description: "Orders over $1000"
     filters:
-      - expr: "{{order_amount}} >= 1000"
+      - expr: "order_amount >= 1000"
 ```
 
+> **Never wrap a column in `{{ }}` inside a measure or filter `expr`.** A
+> `{{column}}` placeholder is **not** substituted there — it leaks into the
+> compiled SQL literally (e.g. `{{"view"."col"}}`), and the warehouse rejects the
+> query with `syntax error at or near "{"`. This applies to filter `expr` **and**
+> `custom` measure `expr` alike. Always write bare column SQL — `Fuel_Price > 3.5`,
+> never `{{fuel_price}} > 3.5`. A filter `expr` references the **underlying
+> columns** (same as a SQL `WHERE`), not dimension names. (Brace references like
+> `{{entity.field}}` exist only for advanced cross-view measures and have no
+> place in ordinary same-view filters or aggregations.)
+
 ### Custom Calculations
+
+Reserve `type: custom` for metrics a typed measure + `filters` **cannot**
+express — ratios, correlations, cross-period math. For plain "aggregate X where
+Y", use a filtered measure (above), not a `custom` `CASE WHEN`: the filtered
+form is clearer and re-aggregates through pre-aggregations, whereas `custom`
+(like `median` and bare `number`) always falls back to the warehouse. Inside a
+`custom` `expr`, write **bare column names** — the same no-`{{ }}` rule as
+filters.
 
 ```yaml
 measures:
@@ -781,7 +804,7 @@ measures:
     description: "Revenue from delivery orders only"
     expr: order_amount
     filters:
-      - expr: "{{is_delivery}} = true"
+      - expr: "order_type = 'delivery'"   # raw column condition (the is_delivery dimension's underlying expr); never {{ }}
 ```
 
 ### Complete Topic Example
