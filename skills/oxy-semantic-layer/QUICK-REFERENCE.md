@@ -97,14 +97,20 @@ oxy semantic-engine --dev-mode
 - name: active_count
   type: count
   filters:
-    - expr: "{{status}} = 'active'"
+    - expr: "status = 'active'"      # raw column condition (WHERE-style); never {{ }}
 
 - name: high_value_revenue
   type: sum
   expr: amount
   filters:
-    - expr: "{{amount}} >= 1000"
+    - expr: "amount >= 1000"
 ```
+
+A filter `expr` is raw SQL over the table's columns — **never** wrap a column in
+`{{ }}`. A `{{col}}` placeholder is not substituted; it leaks into the compiled
+SQL and fails with `syntax error at or near "{"`. The same rule applies inside a
+`custom` measure `expr`. For "aggregate X where Y", use this filtered-measure
+form, not a `custom` `CASE WHEN`.
 
 ### Correlations
 
