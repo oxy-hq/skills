@@ -15,6 +15,23 @@ An Oxy app is a YAML file that defines:
 
 The mental model: **Task -> Output -> Display**
 
+### Two different "apps" in Oxy — don't confuse them
+
+Oxy has **two** app models. This skill builds the first; know the second exists
+so you point users to the right one (and never claim "there is no oxy-app.json").
+
+| | Declarative app (`*.app.yml`) | Custom-code app (`oxy-app.json`) |
+| --- | --- | --- |
+| What it is | Tasks + displays in YAML | A React/TS/Vite front-end bundle |
+| Build step | None | `vite build` -> `dist/` |
+| Identified by | the `*.app.yml` file itself | an **`oxy-app.json`** manifest at the app root |
+| Reaches the instance via | committed into an oxy project (`config.yml` + `*.app.yml`), rendered by `oxy serve --enterprise` | **`oxy publish`** uploads the built bundle as a draft; an admin promotes it live |
+| Use when | dashboards expressible as tasks+displays | bespoke UI beyond tables/charts/markdown |
+
+**`oxy-app.json` is real and is the deploy manifest for the custom-code path** —
+see `## Deploying custom-code apps (oxy-app.json)` below. The rest of this skill
+is about the declarative `*.app.yml` path.
+
 ## App YAML Structure
 
 ```yaml
@@ -881,6 +898,95 @@ oxy validate --file=my_app.app.yml
 ```
 
 Note: Apps are rendered through the Oxy web UI (`oxy start --enterprise`), not via `oxy run`. The `oxy run` command only supports `.workflow.yml`, `.agent.yml`, and `.sql` files.
+
+## Deploying custom-code apps (`oxy-app.json`)
+
+The declarative `*.app.yml` path above needs no manifest. The **custom-code**
+path — a React/TS/Vite front-end — is deployed with `oxy publish`, and every
+publishable app is identified by an **`oxy-app.json`** manifest at its root.
+Reference implementations: `~/repos/module-designs/` (see its `DEPLOYMENT.md`
+and any module's `oxy-app.json`).
+
+### The manifest
+
+`oxy-app.json` lives at the app/module root as the single source of truth the
+oxy CLI reads for slug/org/build:
+
+```json
+{
+  "schemaVersion": 2,
+  "slug": "compliance",
+  "orgSlug": "poke-house-staging",
+  "name": "Compliance",
+  "description": "Continuous operational compliance across every location.",
+  "status": "15 stores · 4 regions · food safety & brand standards",
+  "art": "card.png",
+  "icon": "icon.svg",
+  "ask": {
+    "agent": "agents/restaurant_analyst.agentic.yml",
+    "suggestedQuestions": [
+      "Which stores are at risk this week?",
+      "What are the top repeat violations?"
+    ]
+  },
+  "build": { "outDir": "dist" }
+}
+```
+
+| Field | Required | Purpose |
+| --- | --- | --- |
+| `schemaVersion` | yes | Manifest version — currently `2`. |
+| `slug` | yes | URL slug (usually the module dir name). |
+| `orgSlug` | yes | Target org (e.g. `poke-house-staging`). |
+| `name` | yes | Display name on the launcher card. |
+| `build.outDir` | yes | Built-bundle dir — normally `dist`. |
+| `description` | no | Launcher-card blurb. |
+| `status` | no | Launcher-card subtitle line (metrics / tagline). |
+| `art` | no | Card image filename (module root or `public/`). |
+| `icon` | no | Icon filename (e.g. `icon.svg`). |
+| `ask` | no | Wires the launcher "ask" box to an agent: `{ agent: <path to .agentic.yml>, suggestedQuestions: [...] }`. |
+
+`env` / `target` / `project` are **not** baked into the manifest — CI or CLI
+flags supply them (`OXY_TARGET`, `OXY_ORG`, `OXY_ENV`, `--project`).
+
+### Three load-bearing files
+
+A React/Vite app is made publishable by three files (missing any one breaks the
+publish, not local dev):
+
+1. **`oxy-app.json`** at the module root (above).
+2. **`vite.config.ts`** with two deploy-critical pieces:
+   - `base: process.env.OXY_APP_BASE_PATH || "/"` so code-split chunks resolve
+     under `/customer-apps/<org>/<app>/` (local `pnpm dev`/`build` fall back to `/`).
+   - a `copyOxyAssets()` plugin that copies `oxy-app.json` (plus the `icon`/`art`
+     files it references) into `dist/` on `closeBundle`. **Load-bearing:**
+     `oxy publish` tars only the built dir, and the server captures launcher-card
+     metadata from the bundle's own `oxy-app.json` (`app_builds.manifest_json`) —
+     a manifest left only at the module root never reaches the server.
+3. **`pnpm-workspace.yaml`** with `allowBuilds: { esbuild: true }` — pnpm 10+
+   blocks dependency build scripts by default; esbuild (transitive via Vite)
+   needs its postinstall or `vite build` fails with `ERR_PNPM_IGNORED_BUILDS`.
+
+### Publish flow
+
+- Run `oxy publish` from the module dir. It builds, tars `dist/`, and uploads
+  the app as a **draft**; an Oxy admin promotes the draft to live in the admin
+  UI (CI never publishes straight to the live channel).
+- **First publish auto-registers** the app when `--project` is passed — no manual
+  admin registration step.
+- In `module-designs`, this is automated: PRs build + verify the bundle carries
+  its manifest; push to `main` runs `oxy publish` per changed app dir.
+- **CLI version matters:** `oxy publish` requires a recent CLI (module-designs
+  pins `0.5.97`). Older binaries (e.g. `0.5.54`) predate `oxy publish` and will
+  not have the subcommand — check `oxy --help` / `oxy publish --help` first.
+
+### Which path to build
+
+- User wants a **dashboard** (tables, charts, markdown, filters) → build a
+  `*.app.yml` (the rest of this skill). No `oxy-app.json` needed.
+- User wants **bespoke UI / a coded front-end**, or says "publish", "deploy",
+  "oxy-app.json", or points at a `module-designs`-style React app → that's the
+  custom-code path; author/repair its `oxy-app.json` + the three files above.
 
 ## DeepWiki Fallback
 
