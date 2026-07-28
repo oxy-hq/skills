@@ -2,6 +2,13 @@
 
 Schema cheat sheet and canonical snippets for `*.app.yml` files.
 
+> **Two app models.** This reference covers the declarative `*.app.yml` app
+> (tasks + displays, rendered by `oxy serve --enterprise`). The other model is a
+> **custom-code (React/Vite) app** deployed with `oxy publish` and identified by
+> an **`oxy-app.json`** manifest at the app root — see
+> `SKILL.md` → "Deploying custom-code apps (oxy-app.json)". `oxy-app.json` is the
+> deploy manifest, not an alternative to `*.app.yml`.
+
 ## Top-Level Structure
 
 ```yaml

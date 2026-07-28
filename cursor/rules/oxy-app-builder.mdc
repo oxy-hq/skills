@@ -10,6 +10,13 @@ Build Oxy data apps - interactive dashboards that combine data tasks with visual
 
 The mental model: **Task -> Output -> Display**
 
+> **Two app models — don't confuse them.** This rule builds the declarative
+> `*.app.yml` app (tasks + displays, rendered by `oxy serve --enterprise`). The
+> other model is a **custom-code (React/Vite) app** deployed with `oxy publish`
+> and identified by an **`oxy-app.json`** manifest at the app root. `oxy-app.json`
+> is the deploy manifest for that path, not an alternative to `*.app.yml`. See the
+> `oxy-app-builder` SKILL.md → "Deploying custom-code apps (oxy-app.json)".
+
 ## App YAML Structure
 
 ```yaml
