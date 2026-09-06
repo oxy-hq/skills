@@ -120,6 +120,16 @@ The deck is a second React module (`poc-deck/`), same scaffold, rendering exactl
 
 If the user wants different numbers for a specific deal, they will say so; these values are the defaults for every first-meeting POC.
 
+## Optional: Visionary Apps (when the user asks to "show the vision")
+
+Beyond the proto app + deck, strong deals get one or more **visionary apps** - the BMG "Policy Studio" pattern (set a policy -> simulated outcome ±1σ -> sweep to the optimum). These sell phase 2/3 of the timeline, not the wedge. Same module scaffold; three shapes that map to most ops domains:
+
+- **Policy studio**: interactive levers (sliders) + a deterministic toy model + a margin/outcome curve with the optimum marked. "Turn gut feel into a policy you can test."
+- **Digital twin**: projected state curves per entity (on hand + inbound - demand) with predicted failure dates and scenario toggles.
+- **Approval-loop agent**: machine-drafted actions (POs, journal entries) with visible reasoning and a human APPROVE button - include one "held back because the data is bad" item and one "no action needed" explanation; restraint sells trust.
+
+Rules: mark them SIMULATED/ILLUSTRATIVE, keep the toy model deterministic and hand-written (no chart/ML libraries), reuse the proto app's seed entities so the suite reads as one product, and have each visionary app's closing block reference the capture layer (the vision is only as good as the data collection sold in the proto app).
+
 ## Step 5: Publish and Verify
 
 Publish each module as a draft to the org with `oxy publish` (there is no GitHub-integration step for custom-code apps):
