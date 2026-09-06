@@ -87,7 +87,9 @@ First-meeting POCs never have client data. Seed data lives in `src/data.ts` as t
 
 ### Layout
 
-Whatever the domain, the proto app follows the same narrative arc top to bottom: **headline `KpiTile` row (the hero tile answers the prospect's literal question from the notes) -> the problem list(s) (`Panel` + `LedgerTable` of rows needing action, status `Pill`s) -> one supporting chart (plain SVG or styled divs - do not add a chart library) -> a closing block stating what the full product automates**. Include an "ILLUSTRATIVE DATA" pill in the header.
+Whatever the domain, the proto app follows the same narrative arc top to bottom: **headline `KpiTile` row -> the problem list(s) (`Panel` + `LedgerTable` of rows needing action, status `Pill`s) -> one supporting chart (plain SVG or styled divs - do not add a chart library) -> a closing block stating what the full product automates**. Include an "ILLUSTRATIVE DATA" pill in the header.
+
+**Frame at the category, not the anecdote.** A vivid quote from the notes ("my biggest problem is knowing how much jasmine rice I have") is proof the general problem is felt - it is not the app's scope. Title, header, and hero KPI speak to the whole problem (all products, all locations); the quoted entity appears as supporting flavor (a KPI delta line, one phone mock, one highlighted row). Building the app *around* the quote makes the POC read narrower than the deal.
 
 **When the quick win involves data collection** (no tracking exists today - receiving, counts, field logging), a dashboard alone demos only half the problem. Structure the app as a **two-prong story**: prong 1 - mobile mocks of the worker-facing capture flow (`PhoneFrame` + `PhoneCardField` from `module-designs/inventory/src/chrome/`; 2-3 phones: the logging action, a scheduled task that keeps data fresh, and a compliance/confirmation screen), prong 2 - the centralizing dashboard those taps feed, including inbound visibility (open POs / "on order") alongside on-hand. Bridge them with a one-line divider ("every tap above feeds every number below"). The capture prong is what convinces the operator the data will actually get logged; the dashboard is worthless without it.
 
@@ -125,7 +127,7 @@ Publish each module as a draft to the org with `oxy publish` (there is no GitHub
 1. **Auth**: `oxy login --env production` (browser loopback; caches per host). The logged-in browser session must be the **company app-admin account** - a personal Google session will "succeed" but report you can't publish. The login output tells you which account it grabbed and whether it can publish.
 2. **First publish per app** (from the module dir): `oxy publish --project <workspace-uuid>` - the workspace UUID from Step 2. This auto-registers the app on the org. Without `--project`, the first publish fails with "app <org>/<slug> is not registered".
 3. **Subsequent publishes**: plain `oxy publish`.
-4. Publishes land as **drafts**; promote to live in the admin UI, then confirm both apps render in the Staging workspace before inviting prospect contacts.
+4. Default publishes land as **drafts**, which are invisible in the workspace until promoted. For a POC org you own, skip the ceremony: `oxy publish --promote` goes straight to the live channel (the draft-then-promote flow exists for production CI, not POCs). Confirm both apps render in the workspace before inviting prospect contacts.
 
 ## Quality Guidelines
 
@@ -138,6 +140,7 @@ Publish each module as a draft to the org with `oxy publish` (there is no GitHub
 
 - **`publish rejected (401 Unauthorized)`**: the cached token expired or belongs to a non-admin account. Rerun `oxy login --env production` and read its account/admin report; switch the browser session to the company account if it grabbed a personal one.
 - **`app <org>/<slug> is not registered`**: first publish needs `--project <workspace-uuid>`.
+- **Published but not visible in the workspace**: the build went to the draft channel. Republish with `--promote` (or promote in the admin UI). The live URL is `app.oxygen-hq.com/customer-apps/<org-slug>/<app-slug>/`.
 - **`ERR_PNPM_IGNORED_BUILDS`**: `pnpm-workspace.yaml` is missing `allowBuilds: { esbuild: true }`.
 - **App publishes but launcher card is blank**: `oxy-app.json` didn't make it into `dist/` - the `copyOxyAssets()` vite plugin is missing.
 - **Wrong workspace name**: it is always `Staging`, capitalized, even if the prospect asks about production - production comes after the POC converts.
