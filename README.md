@@ -76,6 +76,14 @@ Bootstraps and refines `.test.yml` eval files for Oxy agents and workflows.
 - Classifies cases as stable, flaky, ambiguous, or unsupported
 - Outputs a diagnostic summary with per-case classification
 
+**[oxy-poc-builder](skills/oxy-poc-builder/SKILL.md)**
+Turns first-meeting call notes into a sales POC package on Oxygen (app.oxygen-hq.com).
+
+- Extracts a POC brief (quick win, seed entities, stakeholders) from call notes
+- Guides Oxygen org creation with a `Staging` workspace
+- Builds a quick-win proto app on synthetic data seeded with the prospect's entities
+- Builds a two-slide deck app with canonical timeline and pricing
+
 ### Commands
 
 | Command         | Description                              |
@@ -122,9 +130,13 @@ skills/
 │   ├── QUICK-REFERENCE.md
 │   ├── templates/       # App templates
 │   └── examples/        # Example prompts
-└── oxy-test-drafter/
-    ├── SKILL.md         # Test drafter skill instructions
-    └── README.md        # User documentation
+├── oxy-test-drafter/
+│   ├── SKILL.md         # Test drafter skill instructions
+│   └── README.md        # User documentation
+└── oxy-poc-builder/
+    ├── SKILL.md         # POC builder skill instructions
+    ├── README.md        # User documentation
+    └── templates/       # POC brief, proto app, and deck templates
 
 commands/
 ├── validate.md

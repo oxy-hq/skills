@@ -39,9 +39,13 @@ oxy-template/
 │   │   ├── QUICK-REFERENCE.md
 │   │   ├── templates/       # App templates
 │   │   └── examples/        # Example prompts
-│   └── oxy-test-drafter/
-│       ├── SKILL.md         # Test drafter skill instructions
-│       └── README.md        # User documentation
+│   ├── oxy-test-drafter/
+│   │   ├── SKILL.md         # Test drafter skill instructions
+│   │   └── README.md        # User documentation
+│   └── oxy-poc-builder/
+│       ├── SKILL.md         # POC builder skill instructions
+│       ├── README.md        # User documentation
+│       └── templates/       # POC brief, proto app, deck templates
 ├── commands/                # Slash commands
 │   ├── validate.md
 │   ├── build.md
