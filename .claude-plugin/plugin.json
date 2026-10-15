@@ -1,38 +1,20 @@
 {
-  "name": "oxy-skills",
-  "version": "1.8.0",
-  "description": "Complete Oxy toolkit for Claude Code and Cursor: build semantic layers, create workflows, ETL pipelines, data apps, sales POCs, draft eval tests, diagnose and repair failures, and validate configurations",
+  "name": "oxy",
+  "description": "Oxy platform skills for coding agents: custom apps and Oxy Functions, semantic models, agents, automations, Airway pipelines, data apps, evals, and the oxyc CLI.",
   "author": {
-    "name": "Oxy Team",
+    "name": "Oxy",
     "url": "https://oxy.tech"
   },
-  "homepage": "https://docs.oxy.tech",
+  "homepage": "https://github.com/oxy-hq/skills",
   "repository": "https://github.com/oxy-hq/skills",
   "license": "MIT",
   "keywords": [
     "oxy",
+    "oxygen",
     "analytics",
-    "semantic-layer",
-    "data",
-    "sql",
-    "workflows",
-    "business-intelligence",
-    "data-pipeline",
-    "ai-agents",
-    "etl",
-    "dlt",
-    "data-apps",
-    "dashboards",
-    "testing",
-    "evals",
-    "test-drafter",
-    "repair",
-    "diagnostics",
-    "skill-improvement",
-    "build-instance",
-    "setup",
-    "poc",
-    "sales-demo",
-    "oxygen"
+    "semantic-model",
+    "custom-apps",
+    "agents",
+    "skills"
   ]
 }

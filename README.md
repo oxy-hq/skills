@@ -1,224 +1,48 @@
-# Oxy Skills
+# Oxy skills
 
-AI-powered assistance for building Oxy analytics projects. Includes skills for semantic layer development, workflow creation, ETL pipelines, and data app building.
+Skills that teach a coding agent — Claude Code, Cursor, Codex, Copilot and anything else that
+reads [Agent Skills](https://agentskills.io) — how to build on [Oxy](https://oxy.tech).
 
-Available for **Claude Code** (plugin) and **Cursor** (project rules).
+## Install
 
-## Quick Start
-
-### Claude Code
-
-```bash
-# Install from marketplace
-/plugin marketplace add oxy-hq/skills
-/plugin install oxy-skills@oxy-hq
-
-# Or use locally
-claude --plugin-dir /path/to/oxy-template
-```
-
-### Cursor
-
-Copy the project rules into your Oxy project:
+Any agent:
 
 ```bash
-# From this repo
-./cursor/install.sh /path/to/your-oxy-project
-
-# Or manually copy
-cp cursor/rules/*.mdc /path/to/your-oxy-project/.cursor/rules/
+npx skills add oxy-hq/skills
 ```
 
-See [cursor/README.md](cursor/README.md) for full setup instructions.
-
-## Plugin Components
-
-### Skills (Auto-Activate)
-
-**[oxy-semantic-layer](skills/oxy-semantic-layer/SKILL.md)**
-Builds semantic layer files (views and topics) for natural language analytics.
-
-- Analyzes database schemas from `.databases/`
-- Creates `*.view.yml` files with entities, dimensions, and measures
-- Generates `*.topic.yml` files to organize views
-- Validates with `oxy build`
-
-**[oxy-workflow-builder](skills/oxy-workflow-builder/SKILL.md)**
-Creates data workflows, SQL queries, and AI agents following Oxy patterns.
-
-- Designs multi-step ETL pipelines
-- Generates parameterized SQL with Jinja2
-- Creates `*.workflow.yml` and `*.agent.yml` files
-- Tests with `oxy run`
-
-**[oxy-etl-builder](skills/oxy-etl-builder/SKILL.md)**
-Builds ETL pipelines using DLT (data-load-tools) for loading data into warehouses.
-
-- Sets up API connectors (Toast, Square, Stripe, etc.)
-- Creates spreadsheet/file ingestion pipelines
-- Generates `etl/sources/`, `etl/runners/`, and transform files
-- Supports ClickHouse, Snowflake, MotherDuck, DuckDB
-
-**[oxy-app-builder](skills/oxy-app-builder/SKILL.md)**
-Creates data apps (`*.app.yml`) - interactive dashboards combining tasks and visualizations.
-
-- Builds SQL, workflow, semantic query, and agent tasks
-- Renders outputs as tables, charts (line, bar, pie), and markdown
-- Supports plan-first workflow with user approval
-- Validates task-to-display data references
-
-**[oxy-test-drafter](skills/oxy-test-drafter/SKILL.md)**
-Bootstraps and refines `.test.yml` eval files for Oxy agents and workflows.
-
-- Scaffolds test files from a list of prompts
-- Runs `oxy test --output-json` and parses multi-run JSON traces
-- Drafts concise, evidence-based `expected` strings
-- Classifies cases as stable, flaky, ambiguous, or unsupported
-- Outputs a diagnostic summary with per-case classification
-
-**[oxy-poc-builder](skills/oxy-poc-builder/SKILL.md)**
-Turns first-meeting call notes into a sales POC package on Oxygen (app.oxygen-hq.com).
-
-- Extracts a POC brief (quick win, seed entities, stakeholders) from call notes
-- Guides Oxygen org creation with a `Staging` workspace
-- Builds a quick-win proto app on synthetic data seeded with the prospect's entities
-- Builds a two-slide deck app with canonical timeline and pricing
-
-### Commands
-
-| Command         | Description                              |
-| --------------- | ---------------------------------------- |
-| `/oxy:validate` | Validate all Oxy configuration files     |
-| `/oxy:build`    | Build semantic layer and embeddings      |
-| `/oxy:sync`     | Sync database metadata and schemas       |
-| `/oxy:test`     | Run evaluation tests on agents/workflows |
-
-### Agents
-
-**[config-validator](agents/config-validator.md)**
-Autonomous validator that checks Oxy YAML files for syntax errors, schema violations, and reference issues.
-
-## Architecture
+Claude Code, as a plugin:
 
 ```text
-.claude-plugin/
-├── plugin.json          # Plugin manifest
-└── marketplace.json     # Marketplace metadata
-
-skills/
-├── oxy-semantic-layer/
-│   ├── SKILL.md         # Skill instructions for Claude
-│   ├── README.md        # User-facing documentation
-│   ├── QUICK-REFERENCE.md
-│   └── *.yml            # Templates
-├── oxy-workflow-builder/
-│   ├── SKILL.md         # Workflow skill instructions
-│   ├── README.md        # User documentation
-│   ├── QUICK-REFERENCE.md
-│   └── *-template.*     # SQL, workflow, agent templates
-├── oxy-etl-builder/
-│   ├── SKILL.md         # ETL skill instructions
-│   ├── README.md        # User documentation
-│   ├── QUICK-REFERENCE.md
-│   ├── playbook-*.md    # Source-specific guides
-│   ├── etl-style-guide.md
-│   ├── warehouse-modeling.md
-│   └── templates/       # Code templates
-├── oxy-app-builder/
-│   ├── SKILL.md         # App builder skill instructions
-│   ├── README.md        # User documentation
-│   ├── QUICK-REFERENCE.md
-│   ├── templates/       # App templates
-│   └── examples/        # Example prompts
-├── oxy-test-drafter/
-│   ├── SKILL.md         # Test drafter skill instructions
-│   └── README.md        # User documentation
-└── oxy-poc-builder/
-    ├── SKILL.md         # POC builder skill instructions
-    ├── README.md        # User documentation
-    └── templates/       # POC brief, proto app, and deck templates
-
-commands/
-├── validate.md
-├── build.md
-├── sync.md
-└── test.md
-
-agents/
-└── config-validator.md  # Autonomous agent instructions
-
-cursor/                      # Cursor IDE support
-├── rules/
-│   ├── oxy-core.mdc         # Always-on core conventions
-│   ├── oxy-semantic-layer.mdc
-│   ├── oxy-workflow-builder.mdc
-│   ├── oxy-etl-builder.mdc
-│   └── oxy-app-builder.mdc
-├── install.sh               # Copy rules into a project
-└── README.md                # Cursor setup guide
+/plugin marketplace add oxy-hq/skills
+/plugin install oxy@oxy-hq
 ```
 
-## Development
+With the Oxy CLI (`oxyc` ships the same skills):
 
-### Prerequisites
-
-- Claude Code CLI
-- Oxy CLI (`oxy --version`)
-- An Oxy project with `config.yml`
-
-### File Conventions
-
-**Skill files** (`skills/*/SKILL.md`):
-
-```markdown
----
-name: skill-name
-description: When this skill activates (user-facing)
----
-
-# Skill Title
-
-Instructions for Claude on how to execute this skill...
+```bash
+npm install -g @oxy-hq/cli && oxyc skills install
 ```
 
-**Command files** (`commands/*.md`):
+To update: `npx skills update`, `claude plugin update oxy@oxy-hq`, or reinstall
+`@oxy-hq/cli` and run `oxyc skills install` again.
 
-```markdown
----
-name: command-name
-description: What this command does
----
+## Skills
 
-#!/bin/bash
-# Command implementation
-```
-
-**Agent files** (`agents/*.md`):
-
-```markdown
----
-name: agent-name
-description: When this agent should activate
-tools: [Read, Grep, Bash]
----
-
-# Agent Instructions
-
-Autonomous agent behavior...
-```
+| Skill | Use it when |
+| --- | --- |
+| `oxy-agents` | Use when creating, editing, reviewing or debugging an Oxy agent, a `.agentic.yml` file that answers questions from the semantic model by clarifying, specifying, solving (SQL), executing and interpreting. |
+| `oxy-airway-pipelines` | Use when writing, reviewing, or debugging an Oxy Airway ELT pipeline (`.airway.yml`) — sources, the `kind` values Oxy actually wires, credentials, reset, rewind and retry — or when one misbehaves: "unsupported source… |
+| `oxy-automations` | Use when writing, debugging, or reviewing an Oxy automation (a `.automation.yml` / legacy `.procedure.yml` workflow — tasks, loops, variables, schedules) in a customer workspace, or when an automation *run*… |
+| `oxy-cli` | Use when you need data out of an Oxy deployment — querying a customer's warehouse or semantic layer, reading threads/runs/apps/orgs, checking why an endpoint 4xxs, or reproducing a customer-reported bug against real… |
+| `oxy-custom-apps` | Use when building, debugging, reviewing, shipping, or verifying an Oxy custom-app bundle (a code-first React/Vite app served by Oxy at /customer-apps/&lt;org&gt;/&lt;slug&gt;/), including writing Oxy Functions, driving them from… |
+| `oxy-data-apps` | Use when creating, editing, reviewing, or debugging an Oxy Data App — a declarative `.app.yml` file of tasks (`execute_sql`, `semantic_query`) and displays (tables, line / bar / pie charts, markdown, side-by-side… |
+| `oxy-data-architecture` | Use when deciding where an aggregate gets materialised — writing an `execute_sql` rollup, chaining one after an `airway` ingest step, choosing rollup vs semantic `pre_aggregations`, or whether raw rows must be… |
+| `oxy-evals` | Use when writing, running, or acting on evals for an Oxy agent — `.test.yml` files that run an `.agentic.yml` agent and score its answers with an LLM judge — and when the agent's answers are wrong. |
+| `oxy-semantic-modeling` | Use when writing, reviewing, or debugging an Oxy semantic model — `.view.yml` views, `.topic.yml` topics, measures, dimensions, entities, pre-aggregations (rollups), and the `meta:` freshness block — in a customer… |
 
 ## Contributing
 
-See [CLAUDE.md](CLAUDE.md) for guidance on developing this plugin with Claude Code.
-
-For issues or feature requests: [GitHub Issues](https://github.com/oxy-hq/skills/issues)
-
-## License
-
-MIT - see [LICENSE](LICENSE)
-
-## Resources
-
-- [Oxy Documentation](https://docs.oxy.tech)
-- [Claude Code Plugins Guide](https://docs.anthropic.com/claude/docs/claude-code-plugins)
-- [Plugin Development Skill](/plugin-dev)
+This repository is generated from `sdk/cli/skills/` in Oxy's product repository, so a
+skill changes in the same pull request as the behaviour it describes. Edits made here are
+overwritten by the next sync — open an issue instead.

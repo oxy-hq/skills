@@ -1,17 +1,21 @@
 {
   "name": "oxy-hq",
   "owner": {
-    "name": "Oxy Team",
+    "name": "Oxy",
     "email": "support@oxy.tech"
   },
   "metadata": {
-    "description": "Official Oxy skills for data analytics with Claude Code - semantic layers, workflows, ETL, and data apps"
+    "description": "Official Oxy skills for coding agents"
   },
   "plugins": [
     {
-      "name": "oxy-skills",
+      "name": "oxy",
       "source": "./",
+      "description": "Oxy platform skills for coding agents: custom apps and Oxy Functions, semantic models, agents, automations, Airway pipelines, data apps, evals, and the oxyc CLI.",
       "category": "development"
     }
-  ]
+  ],
+  "renames": {
+    "oxy-skills": "oxy"
+  }
 }
