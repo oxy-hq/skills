@@ -194,6 +194,48 @@ async function completeChecklist(ctx, runId: string, storeGuid: string) {
 }
 ```
 
+## Telling people something
+
+Name **people**; the platform reaches them. Don't build a recipient table, a
+"sent" log or a Slack webhook helper:
+
+```ts
+await ctx.notify({
+  to: { role: "Store Manager", location: storeId }, // or { userId } · { team }
+  kind: "list_overdue",                             // declared in oxy-app.json
+  title: "Opening list is 30 minutes late",
+  link: `/lists/${listId}`,                         // a path inside the app
+  email: true,                                      // optional; slack: true too
+  idempotencyKey: `overdue:${occurrenceId}`,        // retry-safe
+});
+```
+
+`oxy-app.json`: `"notify": { "kinds": { "list_overdue": {} } }` on the function
+(`{ "critical": true }` for a kind people must not mute). Everyone lands in
+their Oxygen inbox — frontline crew too, who have no email — and is pushed,
+emailed or Slacked where they can be. Needs the org's OLTP store. Use
+`ctx.email.send` only for addresses **outside** the org (a vendor, an
+accountant), and give it an `idempotencyKey` in a scheduled function.
+
+The app opens in its own tab, so show the inbox **in the app** — people who
+live in it (crew on a kiosk) never see Oxygen's bell:
+
+```tsx
+import { NotificationsBell } from "@oxy-hq/sdk";
+
+<NotificationsBell onNavigate={(link) => navigate(link)} /> // in the header
+```
+
+It lists this app's notifications (`scope="all"` for the whole inbox); a tap
+hands the `link` you passed to `ctx.notify` to `onNavigate` (without it, the
+page loads that path under the app's base). It renders nothing where there is
+no inbox (signed out, an older server, `pnpm dev`). `useNotifications()` gives
+`{ items, unread, markRead, markAllRead, refresh, … }` to draw your own. Theme
+it with `--oxy-notifications-*` CSS variables. Push sign-up and mutes stay in
+Oxygen's Settings → Notifications — don't build them. In tests,
+`createTestInbox()` from `@oxy-hq/sdk/testing` is a fake inbox to pass as
+`<OxyAppProvider fetcher={inbox.fetcher}>`.
+
 ## Four pitfalls
 
 - **CORS errors are usually wrong-URL errors in disguise.** The SDK's
