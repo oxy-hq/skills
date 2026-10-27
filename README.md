@@ -39,10 +39,11 @@ To update: `npx skills update`, `claude plugin update oxy@oxy-hq`, or reinstall
 | `oxy-data-apps` | Use when creating, editing, reviewing, or debugging an Oxy Data App — a declarative `.app.yml` file of tasks (`execute_sql`, `semantic_query`) and displays (tables, line / bar / pie charts, markdown, side-by-side… |
 | `oxy-data-architecture` | Use when deciding where an aggregate gets materialised — writing an `execute_sql` rollup, chaining one after an `airway` ingest step, choosing rollup vs semantic `pre_aggregations`, or whether raw rows must be… |
 | `oxy-evals` | Use when writing, running, or acting on evals for an Oxy agent — `.test.yml` files that run an `.agentic.yml` agent and score its answers with an LLM judge — and when the agent's answers are wrong. |
+| `oxy-experiments` | Use when running an Oxy experiment from a terminal or agent — drafting a design, choosing its grain (hour, day, week, month), pricing candidate designs, registering, watching a live run and its interim reading… |
 | `oxy-semantic-modeling` | Use when writing, reviewing, or debugging an Oxy semantic model — `.view.yml` views, `.topic.yml` topics, measures, dimensions, entities, pre-aggregations (rollups), and the `meta:` freshness block — in a customer… |
 
 ## Contributing
 
-This repository is generated at `09053ee82f2e` from `sdk/cli/skills/` in Oxy's product repository, so a
+This repository is generated at `3f1b9eb9fb83` from `sdk/cli/skills/` in Oxy's product repository, so a
 skill changes in the same pull request as the behaviour it describes. Edits made here are
 overwritten by the next sync — open an issue instead.
