@@ -36,7 +36,6 @@ To update: `npx skills update`, `claude plugin update oxy@oxy-hq`, or reinstall
 | `oxy-automations` | Use when writing, debugging, or reviewing an Oxy automation (a `.automation.yml` / legacy `.procedure.yml` workflow — tasks, loops, variables, schedules) in a customer workspace, or when an automation *run*… |
 | `oxy-cli` | Use when you need data out of an Oxy deployment — querying a customer's warehouse or semantic layer, reading threads/runs/apps/orgs, checking why an endpoint 4xxs, or reproducing a customer-reported bug against real… |
 | `oxy-custom-apps` | Use when building, debugging, reviewing, shipping, or verifying an Oxy custom-app bundle (a code-first React/Vite app served by Oxy at /customer-apps/&lt;org&gt;/&lt;slug&gt;/), including writing Oxy Functions, driving them from… |
-| `oxy-data-apps` | Use when creating, editing, reviewing, or debugging an Oxy Data App — a declarative `.app.yml` file of tasks (`execute_sql`, `semantic_query`) and displays (tables, line / bar / pie charts, markdown, side-by-side… |
 | `oxy-data-architecture` | Use when deciding where an aggregate gets materialised — writing an `execute_sql` rollup, chaining one after an `airway` ingest step, choosing rollup vs semantic `pre_aggregations`, or whether raw rows must be… |
 | `oxy-evals` | Use when writing, running, or acting on evals for an Oxy agent — `.test.yml` files that run an `.agentic.yml` agent and score its answers with an LLM judge — and when the agent's answers are wrong. |
 | `oxy-experiments` | Use when running an Oxy experiment from a terminal or agent — drafting a design, choosing its grain (hour, day, week, month), pricing candidate designs, registering, watching a live run and its interim reading… |
@@ -44,6 +43,6 @@ To update: `npx skills update`, `claude plugin update oxy@oxy-hq`, or reinstall
 
 ## Contributing
 
-This repository is generated at `3f1b9eb9fb83` from `sdk/cli/skills/` in Oxy's product repository, so a
+This repository is generated at `eb3545cc294b` from `sdk/cli/skills/` in Oxy's product repository, so a
 skill changes in the same pull request as the behaviour it describes. Edits made here are
 overwritten by the next sync — open an issue instead.

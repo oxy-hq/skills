@@ -1,6 +1,6 @@
 {
   "name": "oxy",
-  "description": "Oxy platform skills for coding agents: custom apps and Oxy Functions, semantic models, agents, automations, Airway pipelines, data apps, evals, and the oxyc CLI.",
+  "description": "Oxy platform skills for coding agents: custom apps and Oxy Functions, semantic models, agents, automations, Airway pipelines, evals, and the oxyc CLI.",
   "author": {
     "name": "Oxy",
     "url": "https://oxy.tech"
