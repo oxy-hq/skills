@@ -43,6 +43,6 @@ To update: `npx skills update`, `claude plugin update oxy@oxy-hq`, or reinstall
 
 ## Contributing
 
-This repository is generated at `8f12c2223c9c` from `sdk/cli/skills/` in Oxy's product repository, so a
+This repository is generated at `30d54dee1f6e` from `sdk/cli/skills/` in Oxy's product repository, so a
 skill changes in the same pull request as the behaviour it describes. Edits made here are
 overwritten by the next sync — open an issue instead.
